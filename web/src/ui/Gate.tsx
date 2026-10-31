@@ -76,10 +76,17 @@ export function SetupScreen() {
             <div className="file-picker">
               <span className="file-picker-label">Budget file</span>
               <input ref={fileInput} className="file-picker-input" type="file" accept=".budget,application/json" tabIndex={-1} aria-hidden="true" onChange={(e) => setBackup(e.target.files?.[0] ?? null)} />
-              <button type="button" className="file-picker-button" onClick={() => fileInput.current?.click()}>Choose a .budget file</button>
+              <button type="button" className="file-picker-button" onClick={() => fileInput.current?.click()}>
+                <span className="file-picker-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4m-4 4 4-4 4 4" /><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+                </span>
+                <span className="file-picker-copy">
+                  <span>{backup ? 'Choose a different file' : 'Choose a .budget file'}</span>
+                  <span className="file-picker-hint">Select an encrypted backup from your device</span>
+                </span>
+              </button>
               <div className="file-picker-selection" aria-live="polite">
-                <span className="file-picker-name">{backup?.name ?? 'No file selected'}</span>
-                {backup && <button type="button" className="file-picker-clear" onClick={() => { setBackup(null); if (fileInput.current) fileInput.current.value = ''; }}>Remove</button>}
+                {backup && <><span className="file-picker-name">{backup.name}</span><button type="button" className="file-picker-clear" onClick={() => { setBackup(null); if (fileInput.current) fileInput.current.value = ''; }}>Remove</button></>}
               </div>
             </div>
             <label>File password
