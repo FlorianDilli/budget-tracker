@@ -23,7 +23,9 @@ export interface BudgetInspectorProps {
 export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspectorProps) {
   const { settings } = useSession();
   const [today] = useState(() => new Date());
-  const palette = prefersDark() ? darkColors : colors;
+  const dark = prefersDark();
+  const palette = dark ? darkColors : colors;
+  const incomeColor = dark ? '#4ade80' : '#16a34a';
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [sort, setSort] = useState<'amount' | 'category'>('amount');
@@ -57,7 +59,7 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
 
   const row = (line: PlanLine) => {
     const entry = line.entry;
-    const color = line.monthlyCents < 0 ? categoryColors.get(categoryOf(line)) || palette[0] : '#15803d';
+    const color = line.monthlyCents < 0 ? categoryColors.get(categoryOf(line)) || palette[0] : incomeColor;
     const note = entry.recurrence === 1 ? 'Monthly' : line.isDue ? `Due (${money(line.priceCents || 0)})` : entry.paymentMonths.length ? `Paid in ${entry.paymentMonths.map((m) => months[m - 1]).join(', ')} (${money(line.priceCents || 0)})` : `Every ${entry.recurrence} months`;
     return <button type="button" className="bi-row" key={entry.index} onClick={() => onSourceLineClick?.(entry.line)} disabled={!onSourceLineClick || entry.line < 1} title={entry.description}>
       <span className="bi-row-left"><span className="bi-row-title">{nameOf(line)}</span><span className="bi-meta"><span className="bi-badge" style={{ color, borderColor: `color-mix(in srgb, ${color} 48%, transparent)`, backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}>{categoryOf(line)}</span><span className={line.isDue && entry.recurrence > 1 ? 'bi-due' : ''}>{note}</span></span></span>
@@ -87,7 +89,7 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
         <div className={`bi-card bi-kpi bi-net ${net < 0 ? 'negative' : ''}`}><span>Net Budget</span><strong className={net < 0 ? 'bi-negative' : 'bi-positive'}>{signed(net)}</strong><small>{net < 0 ? 'Deficit' : 'Surplus'}</small></div>
         <div className="bi-card bi-kpi"><span>Savings Rate</span><strong>{incomeTotal > 0 ? `${(net / incomeTotal * 100).toFixed(1)}%` : '—'}</strong><small>{incomeTotal > 0 ? 'of income' : 'No income'}</small></div>
       </div>
-      <Cashflow income={income} expenses={expenses} currency={money} month={`${fullMonths[month - 1]} ${year}`} />
+      <Cashflow income={income} expenses={expenses} currency={money} month={`${fullMonths[month - 1]} ${year}`} incomeColor={incomeColor} />
       <details className="bi-diff"><summary><span>Changes vs. {fullMonths[previousMonth - 1]} {previousYear}</span><strong className={net - sum(previous) < 0 ? 'bi-negative' : 'bi-positive'}>{signed(net - sum(previous))}</strong><span className="bi-toggle"><span className="bi-expand">Expand</span><span className="bi-collapse">Collapse</span><span className="bi-toggle-icon" aria-hidden="true">⌄</span></span></summary>
         {([['New', added, 'bi-diff-new'], ['Changed', changed, 'bi-diff-changed'], ['Removed', removed, 'bi-diff-removed']] as const).map(([label, lines, cls]) => lines.length > 0 && <div className="bi-diff-group" key={label}><h4 className={cls}>{label.toUpperCase()} ({lines.length})</h4>{lines.map((line) => { const prev = previousByIndex.get(line.entry.index); const expense = line.monthlyCents < 0; const amountCls = label === 'Removed' ? 'bi-amount-removed' : expense ? 'bi-negative' : 'bi-positive'; return <div className="bi-change" key={line.entry.index}><span className="bi-change-name">{nameOf(line)}</span><span className="bi-change-values">{label === 'Changed' && prev && <del>{signed(prev.monthlyCents)}</del>}<span className={amountCls}>{signed(line.monthlyCents)}</span>{label === 'Changed' && prev && <span className="bi-change-delta">({signed(line.monthlyCents - prev.monthlyCents)})</span>}</span></div>; })}</div>)}
         {!added.length && !changed.length && !removed.length && <p className="bi-empty">No changes from the previous month.</p>}
@@ -99,10 +101,9 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
 }
 
 
-function Cashflow({ income, expenses, currency, month }: { income: PlanLine[]; expenses: PlanLine[]; currency: (cents: number) => string; month: string }) {
+function Cashflow({ income, expenses, currency, month, incomeColor }: { income: PlanLine[]; expenses: PlanLine[]; currency: (cents: number) => string; month: string; incomeColor: string }) {
   const uid = useId().replace(/:/g, '');
   const dark = prefersDark();
-  const incomeColor = dark ? '#4ade80' : '#16a34a';
   const deficitColor = dark ? '#f87171' : '#dc2626';
   const surplusColor = '#b9fe67';
   const palette = dark ? darkColors : colors;

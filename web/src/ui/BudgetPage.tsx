@@ -64,7 +64,7 @@ export function BudgetPage() {
     const file = event.dataTransfer.files?.[0];
     if (file) void load(file);
   };
-  return <div className="page budget-page">
+  return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}`}>
     <header className="page-head budget-page-head">
       <h1>Budget</h1>
       <SectionTabs items={VIEW_ITEMS} value={view} onChange={setView} label="Budget view" />

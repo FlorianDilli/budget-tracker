@@ -52,3 +52,11 @@
 .budget-studio.is-budget .budget-inspector { width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; }
 .budget-studio.is-budget .budget-inspector { height: auto; }
 .budget-studio.is-budget .budget-inspector .bi-body { padding-left: 0; padding-right: 0; }
+
+/* Keep the editor inside the app viewport so only the TOML canvas scrolls. */
+.shell:has(.budget-page.is-editor) { height: 100dvh; min-height: 0; overflow: hidden; }
+.shell:has(.budget-page.is-editor) > .content { min-height: 0; overflow: hidden; }
+.budget-page.is-editor { flex: 1 1 0; min-height: 0; }
+.budget-page.is-editor .budget-studio { flex: 1 1 0; height: auto; min-height: 0; }
+.budget-page.is-editor .studio-panels,
+.budget-page.is-editor .studio-editor { min-height: 0; }
