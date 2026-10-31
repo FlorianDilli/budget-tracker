@@ -58,7 +58,10 @@
 .bi-diff summary::-webkit-details-marker { display: none; }
 .bi-diff summary > span:first-child { flex: 1; }
 .bi-diff summary strong { font-family: var(--bi-mono); }
-.bi-toggle { padding: 5px 8px; border: 1px solid #8fdc2b; border-radius: 999px; background: #f1fcdb; color: #166534; font-size: .65rem; white-space: nowrap; }
+.bi-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--bi-border); border-radius: 7px; background: var(--bi-surface); color: var(--bi-muted); font-size: .65rem; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.bi-diff summary:hover .bi-toggle, .bi-diff summary:focus-visible .bi-toggle { border-color: color-mix(in srgb, #8fdc2b 55%, var(--bi-border)); background: color-mix(in srgb, #8fdc2b 12%, var(--bi-surface)); color: var(--bi-green); }
+.bi-toggle-icon { display: inline-block; transition: transform .15s ease; }
+.bi-diff[open] .bi-toggle-icon { transform: rotate(180deg); }
 .bi-collapse, .bi-diff[open] .bi-expand { display: none; }
 .bi-diff[open] .bi-collapse { display: inline; }
 .bi-diff-group h4 { margin: 10px 0 3px; color: var(--bi-muted); font-size: .72rem; font-weight: 800; text-transform: uppercase; }
@@ -87,11 +90,12 @@
 .bi-row-left { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
 .bi-row-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .83rem; font-weight: 700; }
 .bi-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; color: var(--bi-muted); font-size: .66rem; font-weight: 600; }
-.bi-badge { padding: 2px 6px; border: 1px solid; border-radius: 4px; font: 600 .65rem var(--bi-mono); }
+.bi-badge { padding: 2px 6px; border: 1px solid; border-radius: 5px; font: 600 .65rem var(--bi-mono); }
 .bi-due { padding: 2px 6px; border-radius: 4px; background: #fef3c7; color: #92400e; }
 .bi-amount { display: flex; align-items: baseline; flex-shrink: 0; font: 800 .84rem var(--bi-mono); white-space: nowrap; }
 .bi-amount small { font-size: .67rem; opacity: .7; }
 .bi-line { margin-left: 8px; padding: 2px 5px; border: 1px solid var(--bi-border); border-radius: 4px; color: var(--bi-faint); font-size: .65rem; }
+.bi-row:not(:disabled):is(:hover, :focus-visible) .bi-line { border-color: #b9fe67; background: #b9fe67; color: #11140e; }
 .bi-empty { margin: 0; padding: 24px 12px; color: var(--bi-faint); text-align: center; font-size: .78rem; }
 .budget-inspector :focus-visible { outline: 2px solid #8fdc2b; outline-offset: 2px; }
 @container (min-width: 680px) { .bi-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } }
