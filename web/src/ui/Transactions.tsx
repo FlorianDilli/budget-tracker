@@ -3,9 +3,9 @@ import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, type YearMonth } from '../domain/dates';
 import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths } from './common';
-import { centsToDecimal } from '../domain/money';
 import { readCsv } from '../domain/csv';
 import type { ImportFormat } from '../domain/config';
+import { Link } from 'react-router-dom';
 
 const FLAG_LABEL: Record<string, string> = {
   VERIFIED: 'verified',
@@ -20,6 +20,7 @@ export function Transactions() {
   const [ym, setYm] = useState<YearMonth>(() => currentMonth(now));
   const [selected, setSelected] = useState<string | null>(null);
   if (!snapshot) return null;
+  const hasTransactions = snapshot.transactions.length > 0;
   const cur = currencyOf(settings);
   const a = analyzeMonth(financials, snapshot.transactions, ym);
   const selectedTx: TxAnalysis | undefined = a.txs.find((t) => t.tx.hash === selected);
@@ -30,11 +31,11 @@ export function Transactions() {
         <div className="transactions-heading">
           <span className="transactions-eyebrow">Your activity</span>
           <h1>Transactions</h1>
-          <p>Import bank CSVs, review what was detected, and keep your spending history up to date.</p>
+          <p>Add bank CSVs to build and update your transaction history.</p>
         </div>
-        <MonthSelect months={months} value={ym} onChange={(m) => { setYm(m); setSelected(null); }} label="Month" />
+        {hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { setYm(m); setSelected(null); }} label="Month" />}
       </header>
-      <PreviewNotice isSample={isSample} />
+      {hasTransactions && <PreviewNotice isSample={isSample} />}
 
       <ImportPanel
         formats={settings.formats}
@@ -42,7 +43,7 @@ export function Transactions() {
         onCommit={commitImport}
       />
 
-      <Card title={`Transactions in ${ym} (${a.txs.length})`} wide>
+      {hasTransactions && <Card title={`Transactions in ${ym} (${a.txs.length})`} wide>
         {a.txs.length === 0 ? <div className="transactions-empty">
           <span className="transactions-empty-mark" aria-hidden="true">—</span>
           <div><h3>No transactions this month</h3><p>Choose a bank CSV above to add activity for this month.</p></div>
@@ -62,7 +63,7 @@ export function Transactions() {
             </tbody>
           </table>
         )}
-      </Card>
+      </Card>}
 
       {selectedTx && (
         <Card title="Detail" wide>
@@ -90,7 +91,6 @@ function ImportPanel({
   onPreview: (text: string, filename: string, format?: ImportFormat) => Promise<{ ok: true; preview: ImportPreview } | { ok: false; error: string; rowErrors?: string[] }>;
   onCommit: (p: ImportPreview) => Promise<number>;
 }) {
-  const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<string[]>([]);
   const [done, setDone] = useState<string | null>(null);
@@ -103,18 +103,22 @@ function ImportPanel({
     setMapping(format);
     try { setHeaders(readCsv(text, format.delimiter).headers); }
     catch { setHeaders([]); }
-    setPreview(null);
   };
 
-  const runPreview = async (text: string, filename: string, format?: ImportFormat) => {
+  const runImport = async (text: string, filename: string, format?: ImportFormat) => {
     setError(null);
     setRowErrors([]);
-    setPreview(null);
     setBusy(true);
     try {
       const res = await onPreview(text, filename, format);
       if (!res.ok) { setError(res.error); setRowErrors(res.rowErrors ?? []); }
-      else { setPreview(res.preview); chooseFormat(res.preview.format, text); setPreview(res.preview); }
+      else {
+        const count = await onCommit(res.preview);
+        setDone(`${filename}: ${count} new transaction(s) added, ${res.preview.duplicates} duplicate(s) skipped.`);
+        setSource(null);
+        setMapping(null);
+        setHeaders([]);
+      }
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
     finally { setBusy(false); }
   };
@@ -126,7 +130,6 @@ function ImportPanel({
     setError(null);
     setRowErrors([]);
     setDone(null);
-    setPreview(null);
     setSource(null);
     setMapping(null);
     if (!formats.length) {
@@ -138,24 +141,8 @@ function ImportPanel({
       const text = await file.text();
       setSource({ text, filename: file.name });
       chooseFormat(formats[0], text);
-      await runPreview(text, file.name);
+      await runImport(text, file.name);
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
-  };
-
-  const confirm = async () => {
-    if (!preview) return;
-    setBusy(true);
-    try {
-      const n = await onCommit(preview);
-      setDone(`${preview.filename}: ${n} new, ${preview.duplicates} duplicate(s) skipped`);
-      setPreview(null);
-      setSource(null);
-      setMapping(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
   };
 
   return (
@@ -164,42 +151,29 @@ function ImportPanel({
         <div>
           <span className="import-eyebrow">Update your records</span>
           <h2 id="import-title">Add transactions from a CSV</h2>
-          <p>Choose an export from your bank. Review the detected transactions before importing; duplicates are skipped automatically.</p>
+          <p>Upload a bank CSV and its transactions will be added automatically. Duplicates are skipped.</p>
+          {formats.length > 0
+            ? <p className="import-formats"><strong>Configured formats:</strong> {formats.map((format) => format.name).join(', ')}</p>
+            : <p className="import-setup-note">Before importing, <Link to="/settings">set up a bank CSV format in Settings</Link>.</p>}
         </div>
         <span className="import-format-mark" aria-hidden="true">CSV</span>
       </div>
       <div className="import-panel-body">
-        <ol className="import-steps" aria-label="Import steps">
-          <li><span>01</span><strong>Choose a file</strong><small>Upload a bank CSV</small></li>
-          <li><span>02</span><strong>Review rows</strong><small>Check dates and amounts</small></li>
-          <li><span>03</span><strong>Import safely</strong><small>Duplicates are skipped</small></li>
-        </ol>
         <label className={`csv-picker${busy ? ' is-busy' : ''}`}>
           <span className="csv-picker-icon" aria-hidden="true">+</span>
-          <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Select a CSV file'}</strong><small>{source ? source.filename : 'CSV format · up to 10 MB'}</small></span>
-          <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy} aria-label="Choose CSV file" />
+          <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Select a CSV file'}</strong><small>{source ? source.filename : formats.length ? 'CSV file · up to 10 MB' : 'Set up an import format to continue'}</small></span>
+          <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy || formats.length === 0} aria-label="Choose CSV file" />
         </label>
       </div>
-      {formats.length === 0 && <p className="import-setup-note">Set up a bank CSV format in Settings before importing.</p>}
-      {source && mapping && <fieldset className="mapping-controls" disabled={busy}>
+      {source && mapping && error && <fieldset className="mapping-controls" disabled={busy}>
         <p className="muted small">Column mapping for {source.filename}. Changes apply to this import only.</p>
         <label>Format <select value={mapping.name} onChange={(e) => { const format = formats.find((f) => f.name === e.target.value); if (format) chooseFormat(format, source.text); }}>{formats.map((f, i) => <option key={`${f.name}-${i}`} value={f.name}>{f.name}</option>)}</select></label>
-        {(['dateColumn', 'amountColumn', 'descriptionColumn', 'referenceColumn'] as const).map((field) => <label key={field}>{field === 'dateColumn' ? 'Date' : field === 'amountColumn' ? 'Amount' : field === 'descriptionColumn' ? 'Description' : 'Reference'} <select value={mapping[field] ?? ''} onChange={(e) => { setMapping({ ...mapping, [field]: e.target.value || undefined }); setPreview(null); }}><option value="">Select column</option>{headers.map((h, i) => <option key={`${h}-${i}`} value={h}>{h}</option>)}</select></label>)}
-        <button type="button" disabled={busy} onClick={() => void runPreview(source.text, source.filename, mapping)}>Preview mapping</button>
+        {(['dateColumn', 'amountColumn', 'descriptionColumn', 'referenceColumn'] as const).map((field) => <label key={field}>{field === 'dateColumn' ? 'Date' : field === 'amountColumn' ? 'Amount' : field === 'descriptionColumn' ? 'Description' : 'Reference'} <select value={mapping[field] ?? ''} onChange={(e) => { setMapping({ ...mapping, [field]: e.target.value || undefined }); }}><option value="">Select column</option>{headers.map((h, i) => <option key={`${h}-${i}`} value={h}>{h}</option>)}</select></label>)}
+        <button type="button" disabled={busy} onClick={() => void runImport(source.text, source.filename, mapping)}>Import with this mapping</button>
       </fieldset>}
       {error && <p className="error" role="alert">{error}</p>}
       {rowErrors.length > 0 && <ul className="errors">{rowErrors.slice(0, 20).map((r, i) => <li key={i}>{r}</li>)}</ul>}
       {done && <p className="ok">{done}</p>}
-      {preview && (
-        <div className="preview">
-          <p>Format <strong>{preview.format.name}</strong>: {preview.rows.length} rows, <strong>{preview.fresh.length}</strong> new, {preview.duplicates} duplicate(s) will be skipped.</p>
-          <div className="import-preview-table"><table><thead><tr><th>Row</th><th>Date</th><th>Description</th><th className="num">Amount</th></tr></thead><tbody>{preview.rows.slice(0, 10).map((row) => <tr key={row.rowNumber}><td>{row.rowNumber}</td><td>{row.date}</td><td>{row.description}</td><td className="num">{centsToDecimal(row.cents)}</td></tr>)}</tbody></table>{preview.rows.length > 10 && <p className="muted small">Showing first 10 of {preview.rows.length} rows.</p>}</div>
-          <button className="primary" onClick={confirm} disabled={busy || preview.fresh.length === 0}>
-            {preview.fresh.length === 0 ? 'Nothing new to import' : `Import ${preview.fresh.length} transactions`}
-          </button>
-          <button onClick={() => setPreview(null)}>Cancel</button>
-        </div>
-      )}
     </section>
   );
 }

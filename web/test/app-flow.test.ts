@@ -152,9 +152,17 @@ describe('app security and navigation flow', () => {
     expect(transactions).toBeDefined();
     await click(transactions!);
     expect(container.querySelector('h1')?.textContent).toBe('Transactions');
-    expect(container.textContent).toContain('Choose an export from your bank. Review the detected transactions before importing');
-    expect(container.textContent).toContain('Review rows');
-    expect(container.textContent).toContain('No transactions this month');
+    expect(container.textContent).toContain('Upload a bank CSV and its transactions will be added automatically.');
+    expect(container.textContent).not.toContain('Review rows');
+    expect(container.textContent).not.toContain('Import safely');
+    expect(container.querySelector('.import-panel')).not.toBeNull();
+    expect(container.querySelectorAll('.card')).toHaveLength(1);
+    expect(container.querySelector('.month-select')).toBeNull();
+    expect(container.querySelector('.transactions-empty')).toBeNull();
+    expect(container.querySelector('.tx-table')).toBeNull();
+    expect(container.textContent).toContain('Before importing, set up a bank CSV format in Settings.');
+    expect(Array.from(container.querySelectorAll('a[href="/settings"]')).some((link) => link.textContent === 'set up a bank CSV format in Settings')).toBe(true);
+    expect(container.querySelector<HTMLInputElement>('input[type=file]')?.disabled).toBe(true);
 
     await click(button('Lock'));
     expect(container.querySelector('nav[aria-label=Main]')).toBeNull();
