@@ -485,17 +485,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .import-formats { margin: .55rem 0 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 .import-formats strong { color: var(--text); }
 .import-panel-body { display: grid; grid-template-columns: minmax(0, 1fr); padding-top: .25rem; }
-.csv-picker { position: relative; display: flex; align-items: center; gap: .8rem; min-width: 0; padding: .75rem .9rem; border: 1px dashed color-mix(in srgb, var(--accent) 52%, var(--border)); border-radius: 11px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
-.csv-picker:hover, .csv-picker:focus-within { border-color: var(--pos); background: color-mix(in srgb, var(--accent) 11%, var(--surface)); }
+.csv-picker { position: relative; display: flex; flex-direction: row; align-items: center; gap: 1rem; min-width: 0; min-height: 5rem; padding: 1rem 1.1rem; border: 1px dashed color-mix(in srgb, var(--accent) 52%, var(--border)); border-radius: 11px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); cursor: pointer; transition: border-color .15s, background .15s, transform .15s; }
+.csv-picker:not(.is-disabled):hover, .csv-picker:not(.is-disabled):focus-within { border-color: var(--pos); background: color-mix(in srgb, var(--accent) 11%, var(--surface)); }
 .csv-picker:active { transform: translateY(1px); }
 .csv-picker.is-busy { opacity: .6; cursor: wait; }
-.csv-picker-icon { display: grid; flex: 0 0 auto; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 8px; background: var(--accent); color: #11140e; font-size: 1.3rem; font-weight: 500; line-height: 1; }
-.csv-picker-copy { display: flex; min-width: 0; flex-direction: column; gap: .15rem; }
-.csv-picker-copy strong, .csv-picker-copy small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.csv-picker-copy strong { font-size: .82rem; }
-.csv-picker-copy small { color: var(--muted); font-size: .72rem; }
+.csv-picker.is-disabled { opacity: .72; cursor: not-allowed; }
+.csv-picker-icon { display: grid; flex: 0 0 auto; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 9px; background: var(--accent); color: #11140e; font-size: 1.5rem; font-weight: 500; line-height: 1; }
+.csv-picker-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; align-items: flex-start; gap: .2rem; }
+.csv-picker-copy strong, .csv-picker-copy small { max-width: 100%; overflow-wrap: anywhere; }
+.csv-picker-copy strong { font-size: .9rem; }
+.csv-picker-copy small { color: var(--muted); font-size: .78rem; line-height: 1.4; }
 .csv-picker input[type='file'] { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; opacity: 0; cursor: pointer; }
 .csv-picker input[type='file']:disabled { cursor: wait; }
+.csv-picker.is-disabled input[type='file']:disabled { cursor: not-allowed; }
 .import-setup-note { margin: .55rem 0 0; color: var(--muted); font-size: .78rem; }
 .import-setup-note a { color: var(--text); font-weight: 700; text-underline-offset: 3px; }
 .import-panel .mapping-controls { padding-top: .85rem; border-top: 1px solid var(--border); }

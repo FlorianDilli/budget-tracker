@@ -159,7 +159,7 @@ function ImportPanel({
         <span className="import-format-mark" aria-hidden="true">CSV</span>
       </div>
       <div className="import-panel-body">
-        <label className={`csv-picker${busy ? ' is-busy' : ''}`}>
+        <label className={`csv-picker${busy ? ' is-busy' : ''}${formats.length === 0 ? ' is-disabled' : ''}`}>
           <span className="csv-picker-icon" aria-hidden="true">+</span>
           <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Select a CSV file'}</strong><small>{source ? source.filename : formats.length ? 'CSV file · up to 10 MB' : 'Set up an import format to continue'}</small></span>
           <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy || formats.length === 0} aria-label="Choose CSV file" />
