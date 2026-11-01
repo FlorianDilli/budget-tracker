@@ -111,6 +111,9 @@ describe('native budget studio', () => {
     expect(container.querySelector('[aria-label="Open TOML file"]')).toBeNull();
     expect(container.querySelector('[aria-label="Download TOML file"]')).toBeNull();
     expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('ClearCopyUndoRedoSearchWrap');
+    expect(container.querySelector('.studio-editor-actions button[aria-pressed="false"]')?.textContent).toBe('Wrap');
+    await click(button('Wrap'));
+    expect(container.querySelector('.studio-editor-actions button[aria-pressed="true"]')?.textContent).toBe('Wrap');
     expect(container.querySelector('.studio-footer .primary')?.textContent).toBe('Save');
   });
 

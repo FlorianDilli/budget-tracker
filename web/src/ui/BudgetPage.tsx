@@ -22,7 +22,7 @@ export function BudgetPage() {
   // Narrow screens default to the visual budget because the split layout does not fit.
   const [defaultView] = useState<View>(() => (window.innerWidth < 900 ? 'budget' : 'split'));
   const [view, setView] = useSectionParam<View>('view', VIEWS, defaultView);
-  const [wrap, setWrap] = useState(true);
+  const [wrap, setWrap] = useState(false);
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
   const [legacyDraft] = useState(() => {
