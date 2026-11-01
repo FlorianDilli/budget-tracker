@@ -3,7 +3,7 @@ import { SectionTabs, useSectionParam, type SectionItem } from './SectionTabs';
 import { useSession, type SaveResult } from '../state/session';
 import { DEFAULT_SETTINGS, parseSettings, serializeSettings, type ImportFormat, type Settings } from '../domain/config';
 import { SAMPLE_SETTINGS } from '../domain/sample';
-import { centsToDecimal, numberToCents } from '../domain/money';
+import { centsToDecimal, parseDecimalToCents } from '../domain/money';
 import { currentMonth, todayIso, type IsoDate, type YearMonth } from '../domain/dates';
 import { envelopeCreatedAt } from '../crypto/envelope';
 import type { Snapshot } from '../domain/snapshot';
@@ -64,6 +64,17 @@ const THOUSANDS = [
   { value: ' ', label: 'Space' },
   { value: "'", label: "Apostrophe (')" },
 ];
+const DATE_FORMATS = [
+  { value: '%Y-%m-%d', label: 'Year-month-day (2025-03-17)' },
+  { value: '%m/%d/%Y', label: 'Month/day/year (03/17/2025)' },
+  { value: '%d/%m/%Y', label: 'Day/month/year (17/03/2025)' },
+  { value: '%d-%m-%Y', label: 'Day-month-year (17-03-2025)' },
+  { value: '%Y/%m/%d', label: 'Year/month/day (2025/03/17)' },
+  { value: '%d.%m.%Y', label: 'Day.month.year (17.03.2025)' },
+  { value: '%b %d, %Y', label: 'Month name day, year (Mar 17, 2025)' },
+  { value: '%d/%m/%y', label: 'Day/month/two-digit year (17/03/25)' },
+];
+const CUSTOM_DATE_FORMAT = '__custom__';
 
 function SettingsForm() {
   const session = useSession();
@@ -72,6 +83,7 @@ function SettingsForm() {
   const originalText = isSample ? SAMPLE_SETTINGS : savedText;
   const baseText = drafts.settings ?? originalText;
   const [form, setForm] = useState<Settings>(() => readSettings(baseText));
+  const [customDateFormats, setCustomDateFormats] = useState<Record<number, boolean>>({});
   const [notice, setNotice] = useState<string | null>(null);
   // The text this form last wrote to the session draft. Anything else means an outside change (discard, reload).
   const pushed = useRef(baseText);
@@ -80,6 +92,7 @@ function SettingsForm() {
     if (baseText !== pushed.current) {
       pushed.current = baseText;
       setForm(readSettings(baseText));
+      setCustomDateFormats({});
     }
   }, [baseText]);
 
@@ -114,6 +127,7 @@ function SettingsForm() {
     pushed.current = originalText;
     setDraft('settings', originalText);
     setForm(readSettings(originalText));
+    setCustomDateFormats({});
     setNotice(null);
   };
 
@@ -126,7 +140,10 @@ function SettingsForm() {
       formats: [...form.formats, { name: `Format ${form.formats.length + 1}`, dateColumn: '', amountColumn: '', descriptionColumn: '', delimiter: ',', decimalSeparator: '.', thousandsSeparator: '' }],
     });
 
-  const removeFormat = (index: number) => update({ ...form, formats: form.formats.filter((_, i) => i !== index) });
+  const removeFormat = (index: number) => {
+    update({ ...form, formats: form.formats.filter((_, i) => i !== index) });
+    setCustomDateFormats({});
+  };
 
   return (
     <div className="settings-form">
@@ -169,6 +186,8 @@ function SettingsForm() {
         )}
         {form.formats.map((format, index) => {
           const delimiters = DELIMITERS.some((d) => d.value === format.delimiter) ? DELIMITERS : [...DELIMITERS, { value: format.delimiter, label: `Custom (${format.delimiter})` }];
+          const isKnownDateFormat = DATE_FORMATS.some((dateFormat) => dateFormat.value === format.dateFormat);
+          const isCustomDateFormat = customDateFormats[index] || Boolean(format.dateFormat && !isKnownDateFormat);
           const errors = {
             name: format.name.trim() ? '' : 'Format name is required.',
             dateColumn: format.dateColumn.trim() ? '' : 'Date column is required.',
@@ -198,8 +217,22 @@ function SettingsForm() {
                 <label><span className="setting-label">Reference column<InfoButton label="Reference column" text="Optional CSV header containing a bank reference or transaction identifier." /></span>
                   <input value={format.referenceColumn ?? ''} aria-invalid={Boolean(errors.descriptionOrReference)} aria-describedby={errors.descriptionOrReference ? descriptionOrReferenceErrorId : undefined} onChange={(e) => patchFormat(index, { referenceColumn: e.target.value || undefined })} />
                 </label>
-                <label><span className="setting-label">Date format<InfoButton label="Date format" text="Optional date pattern for this bank export, for example %Y-%m-%d. Leave blank to use automatic parsing." /></span>
-                  <input value={format.dateFormat ?? ''} placeholder="%Y-%m-%d" onChange={(e) => patchFormat(index, { dateFormat: e.target.value || undefined })} />
+                <label><span className="setting-label">Date format<InfoButton label="Date format" text="Choose the date order used in this bank export. Automatic detection is recommended unless dates are ambiguous." /></span>
+                  <select
+                    value={isCustomDateFormat ? CUSTOM_DATE_FORMAT : format.dateFormat ?? ''}
+                    onChange={(e) => {
+                      if (e.target.value === CUSTOM_DATE_FORMAT) setCustomDateFormats({ ...customDateFormats, [index]: true });
+                      else {
+                        setCustomDateFormats({ ...customDateFormats, [index]: false });
+                        patchFormat(index, { dateFormat: e.target.value || undefined });
+                      }
+                    }}
+                  >
+                    <option value="">Automatic detection</option>
+                    {DATE_FORMATS.map((dateFormat) => <option key={dateFormat.value} value={dateFormat.value}>{dateFormat.label}</option>)}
+                    <option value={CUSTOM_DATE_FORMAT}>Other format (advanced)</option>
+                  </select>
+                  {isCustomDateFormat && <input aria-label="Custom date format" value={format.dateFormat ?? ''} placeholder="e.g. %Y-%m-%d" onChange={(e) => patchFormat(index, { dateFormat: e.target.value || undefined })} />}
                 </label>
                 <label><span className="setting-label">Delimiter<InfoButton label="Delimiter" text="Select the character that separates fields in each CSV row. Choose Custom when the bank uses another delimiter." /></span>
                   <select value={format.delimiter} onChange={(e) => patchFormat(index, { delimiter: e.target.value })}>
@@ -233,18 +266,7 @@ function SettingsForm() {
                 {format.balanceSnapshot !== undefined && format.balanceSnapshotDate && (
                   <>
                     <label><span className="setting-label">Balance<InfoButton label="Opening balance amount" text="Enter the account balance represented by the imported statement." /></span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={centsToDecimal(format.balanceSnapshot)}
-                        onChange={(e) => {
-                          try {
-                            if (e.target.value !== '') patchFormat(index, { balanceSnapshot: numberToCents(Number(e.target.value)) });
-                          } catch {
-                            /* keep the last valid amount while typing */
-                          }
-                        }}
-                      />
+                      <BalanceAmountInput value={format.balanceSnapshot} onChange={(balanceSnapshot) => patchFormat(index, { balanceSnapshot })} />
                     </label>
                     <label><span className="setting-label">Balance date<InfoButton label="Opening balance date" text="Set the date the opening balance applies to." /></span>
                       <input type="date" value={format.balanceSnapshotDate} onChange={(e) => { if (e.target.value) patchFormat(index, { balanceSnapshotDate: e.target.value as IsoDate }); }} />
@@ -268,6 +290,30 @@ function SettingsForm() {
         {notice && <span className="muted" role="status">{notice}</span>}
       </footer>
     </div>
+  );
+}
+
+function BalanceAmountInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const [draft, setDraft] = useState(() => centsToDecimal(value));
+  useEffect(() => setDraft(centsToDecimal(value)), [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        const normalized = draft.trim().replace(',', '.').replace(/\.$/, '.0');
+        try {
+          const cents = parseDecimalToCents(normalized);
+          onChange(cents);
+          setDraft(centsToDecimal(cents));
+        } catch {
+          setDraft(centsToDecimal(value));
+        }
+      }}
+    />
   );
 }
 

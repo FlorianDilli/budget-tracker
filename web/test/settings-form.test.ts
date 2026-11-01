@@ -89,6 +89,39 @@ it('blocks saving while a required import column is empty', async () => {
   expect(button('Save').disabled).toBe(true);
 });
 
+it('lets an opening balance be edited as natural decimal text', async () => {
+  await render();
+  const balance = field('Balance');
+  expect(balance.type).toBe('text');
+  expect(balance.inputMode).toBe('decimal');
+
+  await typeInto(balance, '123.');
+  expect(balance.value).toBe('123.');
+  await act(async () => balance.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
+  expect(balance.value).toBe('123.00');
+  await act(async () => button('Save').click());
+
+  const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
+  expect(parsed.ok).toBe(true);
+  if (parsed.ok) expect(parsed.value.formats[0].balanceSnapshot).toBe(12300);
+});
+
+it('offers human-readable date formats and saves the selected pattern', async () => {
+  await render();
+  const dateFormat = field('Date format') as HTMLSelectElement;
+  expect(Array.from(dateFormat.options).map((option) => option.textContent)).toContain('Day/month/year (17/03/2025)');
+
+  await act(async () => {
+    dateFormat.value = '%d/%m/%Y';
+    dateFormat.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await act(async () => button('Save').click());
+
+  const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
+  expect(parsed.ok).toBe(true);
+  if (parsed.ok) expect(parsed.value.formats[0].dateFormat).toBe('%d/%m/%Y');
+});
+
 it('adds an import format and reports the missing columns until it is complete', async () => {
   await render();
   expect(container.querySelectorAll('.format-card')).toHaveLength(1);
