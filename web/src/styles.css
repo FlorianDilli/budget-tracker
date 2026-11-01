@@ -97,9 +97,8 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .gate .warn { margin: 0; }
 .gate-brand { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .gate-brand h1, .brand { font-family: var(--brand-font); font-weight: 700; }
-.gate-logo { display: block; width: 88px; height: 88px; margin-bottom: 1rem; }
+.gate-logo { display: block; width: 88px; height: 88px; margin-bottom: .4rem; }
 .gate-brand h1 { font-size: clamp(1.75rem, 6vw, 2.1rem); letter-spacing: -.04em; line-height: 1.2; }
-.gate-brand p { margin: .55rem 0 0; color: var(--muted); font-size: .9rem; }
 .gate:not(.gate-setup) { width: 100%; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); justify-content: center; }
 .gate-unlock-card, .gate .setup-option { padding: clamp(1.4rem, 4vw, 2rem); border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: 0 12px 36px rgba(0, 0, 0, .06); }
 .gate-unlock-heading { margin-bottom: 1.5rem; }

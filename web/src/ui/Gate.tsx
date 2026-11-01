@@ -53,7 +53,6 @@ export function SetupScreen() {
       <div className="gate-brand">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={112} height={112} className="gate-logo" />
         <h1>Budget Tracker</h1>
-        <p>A little more clarity for your money.</p>
       </div>
       <div className="setup-options">
         <section className="card setup-option">
@@ -127,7 +126,6 @@ export function UnlockScreen() {
       <div className="gate-brand">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={112} height={112} className="gate-logo" />
         <h1>Budget Tracker</h1>
-        <p>A little more clarity for your money.</p>
       </div>
       <section className="gate-unlock-card">
         <div className="gate-unlock-heading">
