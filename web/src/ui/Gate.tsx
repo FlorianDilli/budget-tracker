@@ -53,6 +53,7 @@ export function SetupScreen() {
       <div className="gate-brand">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={112} height={112} className="gate-logo" />
         <h1>Budget Tracker</h1>
+        <p>A little more clarity for your money.</p>
       </div>
       <div className="setup-options">
         <section className="card setup-option">
@@ -126,14 +127,21 @@ export function UnlockScreen() {
       <div className="gate-brand">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={112} height={112} className="gate-logo" />
         <h1>Budget Tracker</h1>
+        <p>A little more clarity for your money.</p>
       </div>
-      <form onSubmit={submit} className="stack">
-        <label>Password
-          <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus required />
-        </label>
-        {(error || storeError) && <p className="error" role="alert">{error ?? storeError}</p>}
-        <button type="submit" className="primary" disabled={busy}>{busy ? 'Unlocking…' : 'Unlock'}</button>
-      </form>
+      <section className="gate-unlock-card">
+        <div className="gate-unlock-heading">
+          <h2>Welcome back</h2>
+          <p>Enter your password to unlock your budget on this device.</p>
+        </div>
+        <form onSubmit={submit} className="stack">
+          <label>Password
+            <input type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} autoFocus required />
+          </label>
+          {(error || storeError) && <p className="error" role="alert">{error ?? storeError}</p>}
+          <button type="submit" className="primary" disabled={busy}>{busy ? 'Unlocking…' : 'Unlock'}</button>
+        </form>
+      </section>
     </main>
   );
 }

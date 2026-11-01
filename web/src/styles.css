@@ -92,27 +92,31 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .error-banner { display: flex; gap: 0.75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
 .hint { color: var(--muted); }
 .stack { display: flex; flex-direction: column; gap: 0.6rem; }
-.gate { max-width: 420px; margin: 12vh auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
-.gate form { display: flex; flex-direction: column; gap: 0.75rem; }
+.gate { max-width: 460px; margin: 12vh auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 2rem; }
+.gate form { display: flex; flex-direction: column; gap: 1.1rem; }
 .gate .warn { margin: 0; }
-.gate-brand { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; text-align: center; }
+.gate-brand { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .gate-brand h1, .brand { font-family: var(--brand-font); font-weight: 700; }
-.gate-logo { display: block; width: 112px; height: 112px; }
-.gate:not(.gate-setup) { width: 100%; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); justify-content: center; gap: clamp(1.5rem, 4vh, 2.25rem); }
-.gate:not(.gate-setup) .gate-brand { gap: 0.9rem; }
-.gate:not(.gate-setup) .gate-logo { width: 80px; height: 80px; }
-.gate:not(.gate-setup) .gate-brand h1 { font-size: clamp(1.85rem, 6vw, 2.15rem); letter-spacing: -0.04em; }
-.gate:not(.gate-setup) form { gap: 1rem; }
-.gate:not(.gate-setup) label { gap: 0.45rem; font-size: 0.95rem; font-weight: 550; }
-.gate:not(.gate-setup) input { min-height: 3.25rem; padding-inline: 0.85rem; border-radius: 12px; }
-.gate:not(.gate-setup) button.primary { min-height: 3.25rem; border-radius: 12px; font-size: 1.05rem; }
+.gate-logo { display: block; width: 88px; height: 88px; margin-bottom: 1rem; }
+.gate-brand h1 { font-size: clamp(1.75rem, 6vw, 2.1rem); letter-spacing: -.04em; line-height: 1.2; }
+.gate-brand p { margin: .55rem 0 0; color: var(--muted); font-size: .9rem; }
+.gate:not(.gate-setup) { width: 100%; min-height: 100vh; min-height: 100dvh; margin: 0 auto; padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); justify-content: center; }
+.gate-unlock-card, .gate .setup-option { padding: clamp(1.4rem, 4vw, 2rem); border: 1px solid var(--border); border-radius: 20px; background: var(--surface); box-shadow: 0 12px 36px rgba(0, 0, 0, .06); }
+.gate-unlock-heading { margin-bottom: 1.5rem; }
+.gate-unlock-heading h2, .gate .setup-option h2 { margin: 0; font-size: 1.18rem; letter-spacing: -.025em; }
+.gate-unlock-heading p { margin: .45rem 0 0; color: var(--muted); font-size: .9rem; line-height: 1.5; }
+.gate label { gap: .5rem; font-size: .85rem; font-weight: 650; }
+.gate input:not([type='file']) { width: 100%; min-height: 3.2rem; padding: .75rem .9rem; border-radius: 10px; background: var(--bg); }
+.gate input:not([type='file']):focus { border-color: #83bd31; }
+.gate button.primary { min-height: 3.2rem; border-radius: 10px; font-size: .95rem; }
+.gate .error { margin: 0; font-size: .85rem; }
 .gate-setup { max-width: 900px; margin: 5vh auto; }
-.setup-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.setup-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; }
 .setup-option { display: flex; flex-direction: column; gap: .75rem; }
 .setup-option h2, .setup-option p { margin: 0; }
-.setup-import-option { gap: 1rem; border-color: color-mix(in srgb, var(--accent) 48%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 9%, var(--surface)), var(--surface) 62%); }
-.setup-import-option h2 { font-size: 1.2rem; }
-.setup-import-option form { gap: 1rem; }
+.gate .setup-option p { font-size: .85rem; line-height: 1.55; }
+.setup-option form { margin-top: .75rem; }
+.gate .setup-import-option { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); background: linear-gradient(145deg, color-mix(in srgb, var(--accent) 7%, var(--surface)), var(--surface) 65%); }
 .setup-import-option .file-picker { display: flex; flex-direction: column; gap: .5rem; }
 .file-picker-label { font-size: .9rem; font-weight: 650; }
 .file-picker-input { display: none; }
