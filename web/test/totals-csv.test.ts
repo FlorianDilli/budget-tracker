@@ -109,6 +109,7 @@ describe('CSV import', () => {
 
   it('parses dates with strptime-style formats', () => {
     expect(parseDateWithFormat('31.12.2023', '%d.%m.%Y')).toBe('2023-12-31');
+    expect(parseDateWithFormat('2025.03.17', '%Y.%m.%d')).toBe('2025-03-17');
     expect(parseDateWithFormat('Jan 05, 2024', '%b %d, %Y')).toBe('2024-01-05');
     expect(parseDateWithFormat('02/30/2024', '%m/%d/%Y')).toBeNull();
   });

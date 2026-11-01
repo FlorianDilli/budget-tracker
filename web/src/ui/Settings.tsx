@@ -70,6 +70,7 @@ const DATE_FORMATS = [
   { value: '%d/%m/%Y', label: 'Day/month/year (17/03/2025)' },
   { value: '%d-%m-%Y', label: 'Day-month-year (17-03-2025)' },
   { value: '%Y/%m/%d', label: 'Year/month/day (2025/03/17)' },
+  { value: '%Y.%m.%d', label: 'Year.month.day (2025.03.17)' },
   { value: '%d.%m.%Y', label: 'Day.month.year (17.03.2025)' },
   { value: '%b %d, %Y', label: 'Month name day, year (Mar 17, 2025)' },
   { value: '%d/%m/%y', label: 'Day/month/two-digit year (17/03/25)' },

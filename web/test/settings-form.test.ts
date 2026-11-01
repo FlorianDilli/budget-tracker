@@ -110,16 +110,17 @@ it('offers human-readable date formats and saves the selected pattern', async ()
   await render();
   const dateFormat = field('Date format') as HTMLSelectElement;
   expect(Array.from(dateFormat.options).map((option) => option.textContent)).toContain('Day/month/year (17/03/2025)');
+  expect(Array.from(dateFormat.options).map((option) => option.textContent)).toContain('Year.month.day (2025.03.17)');
 
   await act(async () => {
-    dateFormat.value = '%d/%m/%Y';
+    dateFormat.value = '%Y.%m.%d';
     dateFormat.dispatchEvent(new Event('change', { bubbles: true }));
   });
   await act(async () => button('Save').click());
 
   const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
   expect(parsed.ok).toBe(true);
-  if (parsed.ok) expect(parsed.value.formats[0].dateFormat).toBe('%d/%m/%Y');
+  if (parsed.ok) expect(parsed.value.formats[0].dateFormat).toBe('%Y.%m.%d');
 });
 
 it('adds an import format and reports the missing columns until it is complete', async () => {
