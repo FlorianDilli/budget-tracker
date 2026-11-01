@@ -102,10 +102,15 @@ export function SetupScreen() {
 }
 
 export function UnlockScreen() {
-  const { unlock, error: storeError } = useSession();
+  const { unlock, importBackup, error: storeError } = useSession();
   const [pw, setPw] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [backup, setBackup] = useState<File | null>(null);
+  const [backupPassword, setBackupPassword] = useState('');
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -121,14 +126,30 @@ export function UnlockScreen() {
     }
   };
 
+  const submitImport = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!backup) return;
+    setBackupError(null);
+    setImporting(true);
+    try {
+      await importBackup(await backup.text(), backupPassword);
+    } catch (err) {
+      setBackupError(errorText(err));
+    } finally {
+      setImporting(false);
+      setBackupPassword('');
+    }
+  };
+
   return (
-    <main className="gate">
+    <main className="gate gate-unlock">
       <div className="gate-brand">
         <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={112} height={112} className="gate-logo" />
         <h1>Budget Tracker</h1>
       </div>
       <section className="gate-unlock-card">
         <div className="gate-unlock-heading">
+          <span className="gate-eyebrow">YOUR PRIVATE SPACE</span>
           <h2>Welcome back</h2>
           <p>Enter your password to unlock your budget on this device.</p>
         </div>
@@ -139,7 +160,35 @@ export function UnlockScreen() {
           {(error || storeError) && <p className="error" role="alert">{error ?? storeError}</p>}
           <button type="submit" className="primary" disabled={busy}>{busy ? 'Unlocking…' : 'Unlock'}</button>
         </form>
+        <details className="setup-import-option unlock-import-option">
+          <summary><span>Use a different .budget file</span><span className="unlock-import-chevron" aria-hidden="true">+</span></summary>
+          <p className="muted small">Importing replaces this browser's saved budget after the file is verified. The imported file's password will protect the local copy.</p>
+          <form onSubmit={submitImport} className="stack">
+            <div className="file-picker">
+              <span className="file-picker-label">Budget file</span>
+              <input ref={fileInput} className="file-picker-input" type="file" accept=".budget,application/json" tabIndex={-1} aria-hidden="true" onChange={(e) => { setBackup(e.target.files?.[0] ?? null); setBackupError(null); }} />
+              <button type="button" className="file-picker-button" onClick={() => fileInput.current?.click()}>
+                <span className="file-picker-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V4m-4 4 4-4 4 4" /><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+                </span>
+                <span className="file-picker-copy">
+                  <span>{backup ? 'Choose a different file' : 'Choose a .budget file'}</span>
+                  <span className="file-picker-hint">Select an encrypted backup from your device</span>
+                </span>
+              </button>
+              <div className="file-picker-selection" aria-live="polite">
+                {backup && <><span className="file-picker-name">{backup.name}</span><button type="button" className="file-picker-clear" onClick={() => { setBackup(null); setBackupError(null); if (fileInput.current) fileInput.current.value = ''; }}>Remove</button></>}
+              </div>
+            </div>
+            <label>File password
+              <input type="password" autoComplete="current-password" value={backupPassword} onChange={(e) => setBackupPassword(e.target.value)} required />
+            </label>
+            {backupError && <p className="error" role="alert">{backupError}</p>}
+            <button type="submit" className="primary import-submit" disabled={!backup || importing}>{importing ? 'Importing…' : 'Replace with imported budget'}</button>
+          </form>
+        </details>
       </section>
+      <p className="gate-security-note"><span aria-hidden="true">&#9670;</span> Encrypted and stored on this device</p>
     </main>
   );
 }

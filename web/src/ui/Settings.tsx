@@ -22,7 +22,10 @@ export function Settings() {
   return (
     <div className="page settings-page">
       <header className="page-head">
-        <h1>Settings</h1>
+        <div className="settings-heading">
+          <h1>Settings</h1>
+          <p>{tab === 'general' ? 'Set your display preferences and statement import rules.' : 'Manage backups, account security, and stored budget data.'}</p>
+        </div>
         <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Settings sections" />
       </header>
       <PreviewNotice isSample={isSample} />
@@ -152,7 +155,18 @@ function SettingsForm() {
 
       <Card title="Import formats" info="Each format describes the columns and number/date conventions used by a bank CSV export. Add one format for each bank export layout you import.">
         <p className="muted small">Describe how bank CSV exports are read. Each format is matched when you import a file.</p>
-        {form.formats.length === 0 && <p className="muted">No formats yet.</p>}
+        {form.formats.length === 0 && (
+          <div className="format-empty">
+            <div className="format-empty-copy">
+              <span className="format-empty-icon" aria-hidden="true">CSV</span>
+              <div>
+                <strong>No import formats configured</strong>
+                <p className="muted small">Add a format to map your bank's CSV columns before importing transactions.</p>
+              </div>
+            </div>
+            <button type="button" className="primary" onClick={addFormat}>Add format</button>
+          </div>
+        )}
         {form.formats.map((format, index) => {
           const delimiters = DELIMITERS.some((d) => d.value === format.delimiter) ? DELIMITERS : [...DELIMITERS, { value: format.delimiter, label: `Custom (${format.delimiter})` }];
           const errors = {
@@ -245,7 +259,7 @@ function SettingsForm() {
             </section>
           );
         })}
-        <div><button type="button" onClick={addFormat}>Add format</button></div>
+        {form.formats.length > 0 && <div className="format-add"><button type="button" onClick={addFormat}>Add format</button></div>}
       </Card>
 
       <footer className="settings-actions">
@@ -266,16 +280,31 @@ function DataTab() {
   const months = useMemo(() => (snapshot ? dataMonths(snapshot, financials, now) : []), [snapshot, financials, now]);
   if (!snapshot) return null;
   return (
-    <div className="grid-2">
-      <ExportCard />
-      <RestoreCard localSavedAt={snapshot.savedAt} />
-      <DeleteMonthCard months={months} />
-      <PasswordCard />
-      <ResetCard />
-      <Card title="Lock" info="Lock immediately to hide your budget. The app also locks automatically after 10 minutes without interaction.">
-        <p className="muted">The app locks automatically after 10 minutes without interaction.</p>
-        <button onClick={session.lock}>Lock now</button>
-      </Card>
+    <div className="settings-data">
+      <section className="settings-group" aria-labelledby="backup-heading">
+        <div className="settings-group-heading"><h2 id="backup-heading">Backups</h2><p>Keep a secure copy of your budget or restore one.</p></div>
+        <div className="grid-2">
+          <ExportCard />
+          <RestoreCard localSavedAt={snapshot.savedAt} />
+        </div>
+      </section>
+      <section className="settings-group" aria-labelledby="security-heading">
+        <div className="settings-group-heading"><h2 id="security-heading">Security</h2><p>Manage access to your budget on this device.</p></div>
+        <div className="grid-2">
+          <PasswordCard />
+          <Card title="Lock" info="Lock immediately to hide your budget. The app also locks automatically after 10 minutes without interaction.">
+            <p className="muted">The app locks automatically after 10 minutes without interaction.</p>
+            <button onClick={session.lock}>Lock now</button>
+          </Card>
+        </div>
+      </section>
+      <section className="settings-group settings-danger-group" aria-labelledby="data-management-heading">
+        <div className="settings-group-heading"><h2 id="data-management-heading">Data management</h2><p>Remove transactions or clear your local data.</p></div>
+        <div className="grid-2">
+          <DeleteMonthCard months={months} />
+          <ResetCard />
+        </div>
+      </section>
     </div>
   );
 }
@@ -432,8 +461,10 @@ function ResetCard() {
   return (
     <Card title="Reset everything" info="Permanently deletes all encrypted local data in this browser. Download a backup first if you want to keep your budget.">
       <p className="warn">Deletes all encrypted local data in this browser. Download a backup first.</p>
-      <input value={word} onChange={(e) => setWord(e.target.value)} placeholder='Type "RESET" to confirm' aria-label="Reset confirmation" />
-      <button className="danger" disabled={word !== 'RESET'} onClick={() => void resetAll()}>Reset all data</button>
+      <div className="reset-controls">
+        <input value={word} onChange={(e) => setWord(e.target.value)} placeholder='Type "RESET" to confirm' aria-label="Reset confirmation" />
+        <button className="danger" disabled={word !== 'RESET'} onClick={() => void resetAll()}>Reset all data</button>
+      </div>
     </Card>
   );
 }

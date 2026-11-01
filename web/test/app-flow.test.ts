@@ -6,7 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../src/App';
-import { deleteVault, readVault } from '../src/storage/vault';
+import { deleteVault, readVault, writeVault } from '../src/storage/vault';
 import { sealEnvelope, openEnvelope } from '../src/crypto/envelope';
 import { emptySnapshot } from '../src/domain/snapshot';
 import { SAMPLE_FINANCIALS, SAMPLE_SETTINGS } from '../src/domain/sample';
@@ -82,6 +82,43 @@ describe('app security and navigation flow', () => {
     expect(button('Import budget').disabled).toBe(false);
     await fill(container.querySelector<HTMLInputElement>('input[autocomplete=current-password]')!, backupPassword);
     await click(button('Import budget'));
+
+    await waitFor(() => container.querySelector('nav[aria-label=Main]') !== null);
+    const stored = await readVault();
+    expect(stored).toBeTruthy();
+    expect(JSON.parse(await openEnvelope(stored!, backupPassword))).toMatchObject({
+      settingsToml: SAMPLE_SETTINGS,
+      financialsToml: SAMPLE_FINANCIALS,
+    });
+  }, 20000);
+
+  it('offers a .budget import when a saved browser session is locked', async () => {
+    const currentSnapshot = emptySnapshot('2026-10-29T12:00:00.000Z');
+    const currentText = await sealEnvelope(JSON.stringify(currentSnapshot), 'existing password', currentSnapshot.savedAt);
+    await writeVault(currentText);
+
+    const backupSnapshot = {
+      ...emptySnapshot('2026-10-30T12:00:00.000Z'),
+      settingsToml: SAMPLE_SETTINGS,
+      financialsToml: SAMPLE_FINANCIALS,
+    };
+    const backupPassword = 'backup password';
+    const backupText = await sealEnvelope(JSON.stringify(backupSnapshot), backupPassword, backupSnapshot.savedAt);
+
+    await renderApp();
+    await waitFor(() => container.textContent?.includes('Use a different .budget file') === true);
+    expect(container.textContent).toContain("Importing replaces this browser's saved budget after the file is verified.");
+
+    const fileInput = container.querySelector<HTMLInputElement>('input[type=file]')!;
+    const backupFile = new File([backupText], 'replacement.budget', { type: 'application/json' });
+    Object.defineProperty(backupFile, 'text', { value: async () => backupText });
+    Object.defineProperty(fileInput, 'files', { configurable: true, value: [backupFile] });
+    await act(async () => fileInput.dispatchEvent(new Event('change', { bubbles: true })));
+    expect(container.querySelector('.file-picker-name')?.textContent).toBe('replacement.budget');
+
+    const filePassword = container.querySelector<HTMLInputElement>('.unlock-import-option input[type=password]')!;
+    await fill(filePassword, backupPassword);
+    await click(button('Replace with imported budget'));
 
     await waitFor(() => container.querySelector('nav[aria-label=Main]') !== null);
     const stored = await readVault();
