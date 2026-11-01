@@ -25,9 +25,13 @@ export function Transactions() {
   const selectedTx: TxAnalysis | undefined = a.txs.find((t) => t.tx.hash === selected);
 
   return (
-    <div className="page">
-      <header className="page-head">
-        <h1>Transactions</h1>
+    <div className="page transactions-page">
+      <header className="page-head transactions-head">
+        <div className="transactions-heading">
+          <span className="transactions-eyebrow">Your activity</span>
+          <h1>Transactions</h1>
+          <p>Import bank CSVs, review what was detected, and keep your spending history up to date.</p>
+        </div>
         <MonthSelect months={months} value={ym} onChange={(m) => { setYm(m); setSelected(null); }} label="Month" />
       </header>
       <PreviewNotice isSample={isSample} />
@@ -39,7 +43,10 @@ export function Transactions() {
       />
 
       <Card title={`Transactions in ${ym} (${a.txs.length})`} wide>
-        {a.txs.length === 0 ? <p className="muted">No transactions this month.</p> : (
+        {a.txs.length === 0 ? <div className="transactions-empty">
+          <span className="transactions-empty-mark" aria-hidden="true">—</span>
+          <div><h3>No transactions this month</h3><p>Choose a bank CSV above to add activity for this month.</p></div>
+        </div> : (
           <table className="tx-table">
             <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Flags</th><th className="num">Amount</th></tr></thead>
             <tbody>
@@ -152,8 +159,28 @@ function ImportPanel({
   };
 
   return (
-    <Card title="Import CSV" wide>
-      <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy} aria-label="Choose CSV file" />
+    <section className="import-panel card wide" aria-labelledby="import-title">
+      <div className="import-panel-heading">
+        <div>
+          <span className="import-eyebrow">Update your records</span>
+          <h2 id="import-title">Add transactions from a CSV</h2>
+          <p>Choose an export from your bank. Review the detected transactions before importing; duplicates are skipped automatically.</p>
+        </div>
+        <span className="import-format-mark" aria-hidden="true">CSV</span>
+      </div>
+      <div className="import-panel-body">
+        <ol className="import-steps" aria-label="Import steps">
+          <li><span>01</span><strong>Choose a file</strong><small>Upload a bank CSV</small></li>
+          <li><span>02</span><strong>Review rows</strong><small>Check dates and amounts</small></li>
+          <li><span>03</span><strong>Import safely</strong><small>Duplicates are skipped</small></li>
+        </ol>
+        <label className={`csv-picker${busy ? ' is-busy' : ''}`}>
+          <span className="csv-picker-icon" aria-hidden="true">+</span>
+          <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Select a CSV file'}</strong><small>{source ? source.filename : 'CSV format · up to 10 MB'}</small></span>
+          <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy} aria-label="Choose CSV file" />
+        </label>
+      </div>
+      {formats.length === 0 && <p className="import-setup-note">Set up a bank CSV format in Settings before importing.</p>}
       {source && mapping && <fieldset className="mapping-controls" disabled={busy}>
         <p className="muted small">Column mapping for {source.filename}. Changes apply to this import only.</p>
         <label>Format <select value={mapping.name} onChange={(e) => { const format = formats.find((f) => f.name === e.target.value); if (format) chooseFormat(format, source.text); }}>{formats.map((f, i) => <option key={`${f.name}-${i}`} value={f.name}>{f.name}</option>)}</select></label>
@@ -173,6 +200,6 @@ function ImportPanel({
           <button onClick={() => setPreview(null)}>Cancel</button>
         </div>
       )}
-    </Card>
+    </section>
   );
 }

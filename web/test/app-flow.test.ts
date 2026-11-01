@@ -152,6 +152,8 @@ describe('app security and navigation flow', () => {
     expect(transactions).toBeDefined();
     await click(transactions!);
     expect(container.querySelector('h1')?.textContent).toBe('Transactions');
+    expect(container.textContent).toContain('Choose an export from your bank. Review the detected transactions before importing');
+    expect(container.textContent).toContain('Review rows');
     expect(container.textContent).toContain('No transactions this month');
 
     await click(button('Lock'));

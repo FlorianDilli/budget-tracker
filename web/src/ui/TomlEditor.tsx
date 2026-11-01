@@ -93,7 +93,10 @@ export const TomlEditor = forwardRef<TomlEditorHandle, Props>(function TomlEdito
       if (!v) return;
       const n = Math.min(Math.max(1, line), v.state.doc.lines);
       const l = v.state.doc.line(n);
-      v.dispatch({ selection: { anchor: l.from, head: l.to }, scrollIntoView: true });
+      v.dispatch({
+        selection: { anchor: l.from, head: l.to },
+        effects: EditorView.scrollIntoView(l.from, { y: 'start', yMargin: 8 }),
+      });
       v.focus();
     },
     undo() {
