@@ -407,6 +407,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .settings-grid label { display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.8rem; font-weight: 700; min-width: 0; }
 .settings-grid label.check { flex-direction: row; align-items: center; gap: 0.5rem; font-weight: 600; }
 .settings-page .card { overflow: visible; }
+.settings-grid .field-error { color: var(--err); font-size: 0.75rem; font-weight: 500; }
 .setting-label { display: inline-flex; align-items: center; flex-wrap: wrap; gap: .3rem; }
 .card-title { display: flex; align-items: center; gap: .35rem; margin-bottom: .5rem; }
 .card-title h2 { margin: 0; }

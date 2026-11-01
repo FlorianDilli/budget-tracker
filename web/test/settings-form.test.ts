@@ -80,11 +80,12 @@ it('edits settings through the form and saves valid generated TOML', async () =>
 
 it('blocks saving while a required import column is empty', async () => {
   await render();
-  await typeInto(field('Date column'), '');
+  await typeInto(field('Date column'), '   ');
   expect(button('Save').disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toContain('date_column is required');
-  await typeInto(field('Date column'), 'Booking Date');
+  expect(field('Date column').closest('label')?.querySelector('.field-error')?.textContent).toBe('Date column is required.');
   expect(container.querySelector('[role=alert]')).toBeNull();
+  await typeInto(field('Date column'), 'Booking Date');
+  expect(field('Date column').closest('label')?.querySelector('.field-error')).toBeNull();
   expect(button('Save').disabled).toBe(true);
 });
 
@@ -94,5 +95,12 @@ it('adds an import format and reports the missing columns until it is complete',
   await act(async () => button('Add format').click());
   expect(container.querySelectorAll('.format-card')).toHaveLength(2);
   expect(button('Save').disabled).toBe(true);
-  expect(container.querySelector('[role=alert]')?.textContent).toContain('date_column is required');
+  const newFormat = container.querySelectorAll<HTMLElement>('.format-card')[1];
+  expect(container.querySelector('[role=alert]')).toBeNull();
+  expect(newFormat.querySelectorAll('.field-error')).toHaveLength(3);
+  expect(newFormat.querySelector('#format-1-date-column-error')?.textContent).toBe('Date column is required.');
+  expect(newFormat.querySelector('#format-1-amount-column-error')?.textContent).toBe('Amount column is required.');
+  expect(newFormat.querySelector('#format-1-description-or-reference-error')?.textContent).toBe('Enter a description or reference column.');
+  expect(newFormat.querySelector('input[aria-describedby="format-1-date-column-error"]')).not.toBeNull();
+  expect(newFormat.querySelectorAll(`input[aria-describedby="format-1-description-or-reference-error"]`)).toHaveLength(2);
 });

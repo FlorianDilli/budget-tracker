@@ -82,7 +82,11 @@ function SettingsForm() {
 
   const stored = parseSettings(savedText);
   const issues = formIssues(form);
-  const valid = issues.length === 0;
+  const pageIssues = issues.filter((message) => !/^Format .*: (?:name|date_column|amount_column) is required$|^Format .*: description_column or reference_column is required$/.test(message));
+  const requiredFieldsValid = form.formats.every((format) =>
+    format.name.trim() && format.dateColumn.trim() && format.amountColumn.trim() && (format.descriptionColumn?.trim() || format.referenceColumn?.trim()),
+  );
+  const valid = issues.length === 0 && requiredFieldsValid;
   const text = serializeSettings(form);
   const dirty = isSample || text !== serializeSettings(readSettings(savedText));
 
@@ -124,9 +128,9 @@ function SettingsForm() {
   return (
     <div className="settings-form">
       {!stored.ok && !isSample && <p className="warn">The saved settings could not be read ({stored.issues[0]?.message}). Showing defaults until you save.</p>}
-      {issues.length > 0 && (
+      {pageIssues.length > 0 && (
         <div className="error-banner" role="alert">
-          <ul>{issues.map((message) => <li key={message}>{message}</li>)}</ul>
+          <ul>{pageIssues.map((message) => <li key={message}>{message}</li>)}</ul>
         </div>
       )}
 
@@ -151,23 +155,34 @@ function SettingsForm() {
         {form.formats.length === 0 && <p className="muted">No formats yet.</p>}
         {form.formats.map((format, index) => {
           const delimiters = DELIMITERS.some((d) => d.value === format.delimiter) ? DELIMITERS : [...DELIMITERS, { value: format.delimiter, label: `Custom (${format.delimiter})` }];
+          const errors = {
+            name: format.name.trim() ? '' : 'Format name is required.',
+            dateColumn: format.dateColumn.trim() ? '' : 'Date column is required.',
+            amountColumn: format.amountColumn.trim() ? '' : 'Amount column is required.',
+            descriptionOrReference: format.descriptionColumn?.trim() || format.referenceColumn?.trim() ? '' : 'Enter a description or reference column.',
+          };
+          const descriptionOrReferenceErrorId = `format-${index}-description-or-reference-error`;
           return (
             <section className="format-card" key={index} aria-label={`Format ${index + 1}`}>
               <div className="settings-grid">
                 <label><span className="setting-label">Name<InfoButton label="Format name" text="A short name to identify this bank export format when importing a CSV." /></span>
-                  <input value={format.name} aria-invalid={!format.name.trim()} onChange={(e) => patchFormat(index, { name: e.target.value })} />
+                  <input value={format.name} aria-invalid={!format.name.trim()} aria-describedby={errors.name ? `format-${index}-name-error` : undefined} onChange={(e) => patchFormat(index, { name: e.target.value })} />
+                  {errors.name && <span className="field-error" id={`format-${index}-name-error`}>{errors.name}</span>}
                 </label>
                 <label><span className="setting-label">Date column<InfoButton label="Date column" text="Enter the CSV header containing each transaction date." /></span>
-                  <input value={format.dateColumn} aria-invalid={!format.dateColumn.trim()} onChange={(e) => patchFormat(index, { dateColumn: e.target.value })} />
+                  <input value={format.dateColumn} aria-invalid={!format.dateColumn.trim()} aria-describedby={errors.dateColumn ? `format-${index}-date-column-error` : undefined} onChange={(e) => patchFormat(index, { dateColumn: e.target.value })} />
+                  {errors.dateColumn && <span className="field-error" id={`format-${index}-date-column-error`}>{errors.dateColumn}</span>}
                 </label>
                 <label><span className="setting-label">Amount column<InfoButton label="Amount column" text="Enter the CSV header containing the transaction amount. Use one amount column for income and expenses." /></span>
-                  <input value={format.amountColumn} aria-invalid={!format.amountColumn.trim()} onChange={(e) => patchFormat(index, { amountColumn: e.target.value })} />
+                  <input value={format.amountColumn} aria-invalid={!format.amountColumn.trim()} aria-describedby={errors.amountColumn ? `format-${index}-amount-column-error` : undefined} onChange={(e) => patchFormat(index, { amountColumn: e.target.value })} />
+                  {errors.amountColumn && <span className="field-error" id={`format-${index}-amount-column-error`}>{errors.amountColumn}</span>}
                 </label>
                 <label><span className="setting-label">Description column<InfoButton label="Description column" text="Optional CSV header containing the transaction description or payee." /></span>
-                  <input value={format.descriptionColumn ?? ''} onChange={(e) => patchFormat(index, { descriptionColumn: e.target.value || undefined })} />
+                  <input value={format.descriptionColumn ?? ''} aria-invalid={Boolean(errors.descriptionOrReference)} aria-describedby={errors.descriptionOrReference ? descriptionOrReferenceErrorId : undefined} onChange={(e) => patchFormat(index, { descriptionColumn: e.target.value || undefined })} />
+                  {errors.descriptionOrReference && <span className="field-error" id={descriptionOrReferenceErrorId}>{errors.descriptionOrReference}</span>}
                 </label>
                 <label><span className="setting-label">Reference column<InfoButton label="Reference column" text="Optional CSV header containing a bank reference or transaction identifier." /></span>
-                  <input value={format.referenceColumn ?? ''} onChange={(e) => patchFormat(index, { referenceColumn: e.target.value || undefined })} />
+                  <input value={format.referenceColumn ?? ''} aria-invalid={Boolean(errors.descriptionOrReference)} aria-describedby={errors.descriptionOrReference ? descriptionOrReferenceErrorId : undefined} onChange={(e) => patchFormat(index, { referenceColumn: e.target.value || undefined })} />
                 </label>
                 <label><span className="setting-label">Date format<InfoButton label="Date format" text="Optional date pattern for this bank export, for example %Y-%m-%d. Leave blank to use automatic parsing." /></span>
                   <input value={format.dateFormat ?? ''} placeholder="%Y-%m-%d" onChange={(e) => patchFormat(index, { dateFormat: e.target.value || undefined })} />
