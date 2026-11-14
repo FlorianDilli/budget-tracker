@@ -1,4 +1,4 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, type YearMonth } from '../domain/dates';
@@ -17,7 +17,18 @@ export function Transactions() {
   const { snapshot, settings, financials, isSample, previewImport, commitImport } = useSession();
   const now = useMemo(() => new Date(), []);
   const months = useMemo(() => (snapshot ? dataMonths(snapshot, financials, now) : []), [snapshot, financials, now]);
-  const [ym, setYm] = useState<YearMonth>(() => currentMonth(now));
+  // Default to the most recent month that actually has transactions,
+  // not the current (often empty) month.
+  const lastDataMonth = useMemo<YearMonth>(() => {
+    if (!snapshot || snapshot.transactions.length === 0) return currentMonth(now);
+    return snapshot.transactions.reduce((latest, t) => (t.date.slice(0, 7) > latest ? t.date.slice(0, 7) : latest), snapshot.transactions[0].date.slice(0, 7));
+  }, [snapshot, now]);
+  const [ym, setYm] = useState<YearMonth>(() => lastDataMonth);
+  const userPickedMonth = useRef(false);
+  // Snapshot may only arrive after first render (unlock); follow it until the user picks a month.
+  useEffect(() => {
+    if (!userPickedMonth.current && snapshot) setYm(lastDataMonth);
+  }, [snapshot, lastDataMonth]);
   const [selected, setSelected] = useState<string | null>(null);
   if (!snapshot) return null;
   const hasTransactions = snapshot.transactions.length > 0;
@@ -33,7 +44,7 @@ export function Transactions() {
           <h1>Transactions</h1>
           <p>Add bank CSVs to build and update your transaction history.</p>
         </div>
-        {hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { setYm(m); setSelected(null); }} label="Month" />}
+        {hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />}
       </header>
       {hasTransactions && <PreviewNotice isSample={isSample} />}
 

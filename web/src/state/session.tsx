@@ -245,8 +245,10 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const exportBackup = useCallback(async () => {
     const createdAt = nowIso();
     const text = await sealEnvelope(JSON.stringify(current()), requirePassword(), createdAt);
-    const stamp = createdAt.replace(/[-:]/g, '').slice(0, 15).replace('T', '-');
-    return { text, filename: `moonli-${stamp}.budget` };
+    // Human-readable, sortable name: what it is + when it was created,
+    // e.g. budget-backup-2026-11-14-1541.budget
+    const stamp = createdAt.slice(0, 10) + '-' + createdAt.slice(11, 16).replace(':', '');
+    return { text, filename: `budget-backup-${stamp}.budget` };
   }, [snapshot]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const readBackup = useCallback(async (text: string, password: string): Promise<Snapshot> => {

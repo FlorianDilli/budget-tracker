@@ -13,6 +13,7 @@ interface Row {
   left: Cents;
   total: Cents;
   hasData: boolean;
+  hasTx: boolean;
 }
 
 export function Insights() {
@@ -28,11 +29,14 @@ export function Insights() {
       const a = analyzeMonth(financials, snapshot.transactions, ym);
       const t = totalMoney(settings, financials, snapshot.transactions, asOfForMonth(ym, settings, now));
       const hasData = a.txs.length > 0 || a.plan.some((p) => p.active);
-      return { ym, budget: a.budgetCents, spend: a.spendCents, left: a.leftCents, total: t.totalCents, hasData };
+      return { ym, budget: a.budgetCents, spend: a.spendCents, left: a.leftCents, total: t.totalCents, hasData, hasTx: a.txs.length > 0 };
     });
   }, [snapshot, settings, financials, now, cutoff]);
 
   const withData = rows.filter((r) => r.hasData);
+  // Chart starts at the first month with transactions, not where the budget plan starts.
+  const firstTx = rows.findIndex((r) => r.hasTx);
+  const chartRows = firstTx >= 0 ? rows.slice(firstTx) : rows;
   const avg = (key: 'budget' | 'spend' | 'left') => {
     if (!withData.length) return 0;
     return Math.round(sumCents(withData.map((r) => r[key])) / withData.length);
@@ -44,7 +48,7 @@ export function Insights() {
       <PreviewNotice isSample={isSample} />
 
       <Card title="Total money over time" wide>
-        <TotalChart rows={rows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} />
+        <TotalChart rows={chartRows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} />
         <p className="muted small">Measured on the day set by total_money_as_of_day (settings.toml); each point is the month's measurement date.</p>
       </Card>
 
@@ -86,15 +90,25 @@ export function Insights() {
 function TotalChart({ rows, currency }: { rows: Row[]; currency: string }) {
   if (rows.length < 2) return <p className="muted">Need at least two months to draw the chart.</p>;
   const W = 640;
-  const H = 220;
+  const H = 260;
   const pad = 36;
+  const padTop = 16;
+  const padBottom = 64; // room for rotated x labels
   const vals = rows.map((r) => r.total);
   const min = Math.min(...vals, 0);
   const max = Math.max(...vals, 0);
   const span = max - min || 1;
-  const x = (i: number) => pad + (i * (W - pad * 2)) / (rows.length - 1);
-  const y = (v: number) => H - pad - ((v - min) / span) * (H - pad * 2);
+  const plotW = W - pad * 2;
+  const plotH = H - padTop - padBottom;
+  const x = (i: number) => pad + (i * plotW) / (rows.length - 1);
+  const y = (v: number) => H - padBottom - ((v - min) / span) * plotH;
   const points = rows.map((r, i) => `${x(i).toFixed(1)},${y(r.total).toFixed(1)}`).join(' ');
+  // Thinning: every shown label keeps ~48px of horizontal room; extra months
+  // are skipped instead of overlapping. Rotated -45° labels stay readable.
+  const maxLabels = Math.max(2, Math.floor(plotW / 48));
+  const step = Math.max(1, Math.ceil(rows.length / maxLabels));
+  const showLabel = (i: number) => i === 0 || i === rows.length - 1 || i % step === 0;
+  const labelY = H - padBottom + 14;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`Total money from ${monthOf(rows[0].ym)} to ${monthOf(rows[rows.length - 1].ym)}`}>
       <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} className="axis" />
@@ -102,8 +116,8 @@ function TotalChart({ rows, currency }: { rows: Row[]; currency: string }) {
       {rows.map((r, i) => (
         <g key={r.ym}>
           <circle cx={x(i)} cy={y(r.total)} r={3} />
-          {(i === 0 || i === rows.length - 1 || i % 3 === 0) && (
-            <text x={x(i)} y={H - 10} textAnchor="middle">{r.ym}</text>
+          {showLabel(i) && (
+            <text x={x(i)} y={labelY} textAnchor="end" transform={`rotate(-45 ${x(i)} ${labelY})`}>{r.ym}</text>
           )}
         </g>
       ))}

@@ -160,9 +160,9 @@ function SettingsForm() {
           <label><span className="setting-label">Currency symbol<InfoButton label="Currency symbol" text="The symbol or code shown beside money amounts, such as €, EUR, or $." /></span>
             <input value={form.currencySymbol} maxLength={8} aria-invalid={!form.currencySymbol.trim()} onChange={(e) => update({ ...form, currencySymbol: e.target.value })} />
           </label>
-          <label><span className="setting-label">Count totals up to day<InfoButton label="Count totals up to day" text="Choose the day of each month through which transactions are included in totals. Use 0 to include the whole month." /></span>
-            <input type="number" min={0} max={31} step={1} value={form.totalMoneyAsOfDay} onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= 31) update({ ...form, totalMoneyAsOfDay: n }); }} />
-            <span className="muted small">0 counts the whole month.</span>
+          <label><span className="setting-label">On which day of the month is your total measured?<InfoButton label="On which day of the month is your total measured?" text="For every month we calculate your total money as of this day of the month. Example: with 15, the June total includes transactions up to 15 June; transactions from 16–30 June count towards July. With 0, the total is measured at the end of the month (today for the current month)." /></span>
+            <input type="number" min={0} max={31} step={1} value={form.totalMoneyAsOfDay} aria-describedby="total-day-help" onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= 31) update({ ...form, totalMoneyAsOfDay: n }); }} />
+            <span className="muted small" id="total-day-help">{form.totalMoneyAsOfDay === 0 ? 'End of month: the total counts the whole month.' : `Day ${form.totalMoneyAsOfDay} of each month: later transactions count towards the next month.`}</span>
           </label>
           <label className="check">
             <input type="checkbox" checked={form.roundAmounts} onChange={(e) => update({ ...form, roundAmounts: e.target.checked })} />
