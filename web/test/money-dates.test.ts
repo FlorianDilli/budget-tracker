@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseDecimalToCents, numberToCents, divideCents, centsToDecimal } from '../src/domain/money';
-import { isIsoDate, parseIsoDate, monthLast, addMonths, monthRange, todayIso } from '../src/domain/dates';
+import { isIsoDate, parseIsoDate, monthLast, addMonths, monthRange, todayIso, fullMonthLabel } from '../src/domain/dates';
 
 describe('money', () => {
   it('parses decimals to exact cents', () => {
@@ -52,5 +52,9 @@ describe('dates', () => {
   });
   it('uses the injected clock for today', () => {
     expect(todayIso(new Date(2026, 9, 29, 12))).toBe('2026-10-29');
+  });
+  it('labels a month with its full name and year', () => {
+    expect(fullMonthLabel('2026-09')).toBe('September 2026');
+    expect(fullMonthLabel('2026-01')).toBe('January 2026');
   });
 });

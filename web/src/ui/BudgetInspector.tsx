@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import { monthLast } from '../domain/dates';
 import { planForMonth, type PlanLine } from '../domain/plan';
 import { useSession } from '../state/session';
+import { centsToDecimal } from '../domain/money';
 import type { Financials } from '../domain/config';
 import './budget-inspector.css';
 
@@ -35,7 +36,9 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
     for (const date of [entry.start, entry.end, ...entry.history.map((h) => h.from)]) if (date) years.add(Number(date.slice(0, 4)));
   }
   for (const cash of financials.cash) years.add(Number(cash.date.slice(0, 4)));
-  const money = (cents: number) => `${currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency + ' '}${(Math.abs(cents) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const round = settings.roundAmounts ?? false;
+  // Unified format everywhere: number, a space, then the currency code — e.g. "250.00 USD" (or "250 USD" when round_amounts is on).
+  const money = (cents: number) => `${centsToDecimal(Math.abs(cents), round)} ${currency}`;
   const signed = (cents: number) => `${cents < 0 ? '-' : '+'}${money(cents)}`;
   const plans = months.map((_, i) => planForMonth(financials, ymOf(year, i + 1)).filter((line) => line.active));
   const active = plans[month - 1];
@@ -79,7 +82,7 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
     <div className="bi-toolbar">
       <select aria-label="Year" value={year} onChange={(event) => setYear(Number(event.target.value))}>{[...years].sort((a, b) => a - b).map((y) => <option key={y}>{y}</option>)}</select>
       <select aria-label="Sort transactions" value={sort} onChange={(event) => setSort(event.target.value as 'amount' | 'category')}><option value="amount">↕ Amount</option><option value="category">↕ Category</option></select>
-      <select aria-label="Display currency label (no conversion)" title="Changes the label only; amounts are not converted" value={currency} onChange={(event) => setCurrency(event.target.value)}>{![ 'USD', 'EUR', 'GBP', 'CHF'].includes(currency) && <option value={currency}>{currency}</option>}<option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="CHF">CHF</option></select>
+      <select aria-label="Display currency label (no conversion)" title="Changes the label only; amounts are not converted" value={currency} onChange={(event) => setCurrency(event.target.value)}>{![ 'USD', 'EUR', 'GBP', 'CHF'].includes(currency) && <option value={currency}>{currency}</option>}<option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CHF">CHF</option></select>
     </div>
     <div className="bi-body">
       <div className="bi-card bi-months"><div className="bi-card-head"><span>{year} Monthly Overview</span><span>Select month to inspect</span></div><div className="bi-month-grid">{months.map((label, i) => <button type="button" key={label} aria-pressed={month === i + 1} className={`bi-month ${month === i + 1 ? 'active' : ''} ${year === today.getFullYear() && i === today.getMonth() ? 'current' : ''}`} onClick={() => setMonth(i + 1)}><span>{label}</span><small className={sum(plans[i]) < 0 ? 'bi-negative' : 'bi-positive'}>{signed(sum(plans[i]))}</small></button>)}</div></div>

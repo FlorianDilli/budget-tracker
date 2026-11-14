@@ -471,11 +471,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .format-empty-icon { display: grid; place-items: center; flex: 0 0 auto; width: 2.75rem; height: 2.75rem; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 10px; background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--text); font-family: var(--mono); font-size: .7rem; font-weight: 800; }
 
 /* Transaction imports: explain the workflow before asking for a file. */
-.transactions-page { max-width: 1180px; margin-inline: auto; gap: 1.35rem; }
-.transactions-head { align-items: flex-end; padding: .1rem 0 1rem; border-bottom: 1px solid var(--border); }
+/* Same scale/width as the other tabs (Overview, Insights, …): no page-specific
+   max-width or enlarged heading, so the topbar/logo and page head share one zoom level. */
+.transactions-page { gap: 1.2rem; }
+.transactions-head { align-items: center; }
 .transactions-heading { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
-.transactions-heading h1 { font-size: clamp(1.8rem, 3vw, 2.25rem); letter-spacing: -.055em; }
-.transactions-heading > p { max-width: 38rem; margin: .3rem 0 0; color: var(--muted); font-size: .92rem; line-height: 1.55; }
+.transactions-heading h1 { font-size: 1.65rem; letter-spacing: -.04em; }
+.transactions-heading > p { max-width: 38rem; margin: .3rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
 .transactions-eyebrow, .import-eyebrow { color: var(--muted); font-size: .67rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .transactions-head .month-select { flex: 0 0 auto; padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; }
 .transactions-head .month-select select { border-radius: 7px; }

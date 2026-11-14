@@ -90,3 +90,9 @@ export function monthLabel(ym: YearMonth): string {
   const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${names[m - 1]} ${y}`;
 }
+
+export function fullMonthLabel(ym: YearMonth): string {
+  const [y, m] = ym.split('-').map(Number);
+  const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${names[m - 1]} ${y}`;
+}

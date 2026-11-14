@@ -52,14 +52,14 @@ export function Insights() {
 
       <Card title="Total money over time" wide>
         <TotalChart rows={chartRows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} round={round} />
-        <p className="muted small">Measured on the day set by total_money_as_of_day (settings.toml); each point is the month's measurement date.</p>
+        <p className="muted small">Each point shows your balance on day {settings.totalMoneyAsOfDay} of the month{settings.totalMoneyAsOfDay === 31 ? ' (the last day in shorter months)' : ''}.</p>
       </Card>
 
       <Card title="Months at a glance" wide>
         {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
           <table className="tx-table">
             <thead>
-              <tr><th>Month</th><th className="num">Plan budget</th><th className="num">Spending</th><th className="num">Left</th><th className="num">Total money</th></tr>
+              <tr><th>Month</th><th className="num">Budget</th><th className="num">Non recurring</th><th className="num">Left</th><th className="num">Total money</th></tr>
             </thead>
             <tbody>
               {reportRows.map((r, i) => {
@@ -133,7 +133,7 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
           )}
         </g>
       ))}
-      <text x={4} y={y(max) + 4} className="axis-label">{centsToDecimal(max, round)}</text>
+      <text x={4} y={y(max) + 4} className="axis-label">{centsToDecimal(max, round)} {currency}</text>
       <text x={4} y={y(min) + 4} className="axis-label">{centsToDecimal(min, round)} {currency}</text>
     </svg>
   );

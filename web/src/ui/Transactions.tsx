@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
-import { currentMonth, type YearMonth } from '../domain/dates';
+import { currentMonth, fullMonthLabel, type YearMonth } from '../domain/dates';
 import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths } from './common';
 import { readCsv } from '../domain/csv';
 import type { ImportFormat } from '../domain/config';
@@ -54,7 +54,7 @@ export function Transactions() {
         onCommit={commitImport}
       />
 
-      {hasTransactions && <Card title={`Transactions in ${ym} (${a.txs.length})`} wide>
+      {hasTransactions && <Card title={fullMonthLabel(ym)} wide>
         {a.txs.length === 0 ? <div className="transactions-empty">
           <span className="transactions-empty-mark" aria-hidden="true">—</span>
           <div><h3>No transactions this month</h3><p>Choose a bank CSV above to add activity for this month.</p></div>

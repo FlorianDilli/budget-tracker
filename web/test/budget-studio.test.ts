@@ -32,7 +32,7 @@ function parsed(text: string) {
   return result.value;
 }
 
-async function render(initialDraft: string | null = null, isSample = false) {
+async function render(initialDraft: string | null = null, isSample = false, settings: Record<string, unknown> = {}) {
   function Harness() {
     const [savedText, setSavedText] = useState(saved);
     const [draftText, setDraftText] = useState(initialDraft);
@@ -42,7 +42,7 @@ async function render(initialDraft: string | null = null, isSample = false) {
       return { ok: true };
     });
     mocks.session = {
-      snapshot: { financialsToml: savedText }, financials: parsed(savedText), settings: { currencySymbol: 'USD' },
+      snapshot: { financialsToml: savedText }, financials: parsed(savedText),       settings: { currencySymbol: 'USD', roundAmounts: false, ...settings },
       drafts: { financials: draftText, settings: null }, isSample, setDraft, saveFinancials,
     };
     return createElement(MemoryRouter, null, createElement('div', null, createElement(BudgetPage), createElement('output', { 'data-testid': 'shared' }, parsed(savedText).recurring[0]?.description)));
@@ -89,7 +89,7 @@ describe('native budget studio', () => {
     await edit(draft);
     expect(setDraft).toHaveBeenCalledWith('financials', draft);
     expect(container.querySelector('.budget-inspector')?.textContent).toContain('Draft salary');
-    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+$250.00');
+    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250.00 USD');
     expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Saved rent');
     expect(container.querySelector('.studio-status')).toBeNull();
     expect(container.textContent).not.toContain('Unsaved preview');
@@ -101,6 +101,13 @@ describe('native budget studio', () => {
     expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Draft salary');
     expect(container.querySelector('[role=status]')?.textContent).toContain('Saved to encrypted storage.');
     expect(button('Save').disabled).toBe(true);
+  });
+
+  it('applies round_amounts and number-space-currency format in the visual budget', async () => {
+    await render(draft, false, { roundAmounts: true });
+    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250 USD');
+    expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('250.00');
+    expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('$250');
   });
 
   it('uses the shared preview notice without a duplicate budget status', async () => {

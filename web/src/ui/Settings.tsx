@@ -368,18 +368,38 @@ function ExportCard() {
   const run = async () => {
     try {
       const { text, filename } = await exportBackup();
+      // Prefer the File System Access API: it lets the user confirm the
+      // suggested name (budget-backup-YYYY-MM-DD-HHMM.budget) and avoids
+      // browsers that drop the download attribute and save the blob URL (a UUID).
+      const picker = (window as unknown as { showSaveFilePicker?: (opts: unknown) => Promise<{ createWritable: () => Promise<{ write: (t: string) => Promise<void>; close: () => Promise<void> }> }> }).showSaveFilePicker;
+      if (picker) {
+        try {
+          const handle = await picker({ suggestedName: filename, types: [{ description: 'Budget backup', accept: { 'application/json': ['.budget'] } }] });
+          const writable = await handle.createWritable();
+          await writable.write(text);
+          await writable.close();
+          return;
+        } catch (e) {
+          if (e instanceof DOMException && e.name === 'AbortError') return; // user cancelled
+          // fall through to the anchor download below
+        }
+      }
       const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       // The anchor must be in the DOM, otherwise some browsers ignore the
       // download attribute and save the file under the blob URL (a UUID).
+      // Revoking the object URL immediately can race the download, so
+      // clean up only after the browser has had time to start it.
       document.body.appendChild(a);
       try {
         a.click();
       } finally {
-        a.remove();
-        URL.revokeObjectURL(url);
+        window.setTimeout(() => {
+          a.remove();
+          URL.revokeObjectURL(url);
+        }, 10_000);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
