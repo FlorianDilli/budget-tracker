@@ -35,7 +35,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   currencySymbol: 'EUR',
   roundAmounts: false,
-  totalMoneyAsOfDay: 0,
+  totalMoneyAsOfDay: 31,
   formats: [],
 };
 
@@ -66,8 +66,10 @@ export function parseSettings(text: string): Parsed<Settings> {
   }
   if (user.total_money_as_of_day !== undefined) {
     const d = user.total_money_as_of_day;
-    if (typeof d !== 'number' || !Number.isInteger(d) || d < 0 || d > 31) {
-      issues.push({ line: lineOf(text, 'user'), message: '[user] total_money_as_of_day must be an integer 0-31' });
+    // Legacy: 0 used to mean "end of month"; treat it as the 31st (clipped per month).
+    if (d === 0) settings.totalMoneyAsOfDay = 31;
+    else if (typeof d !== 'number' || !Number.isInteger(d) || d < 1 || d > 31) {
+      issues.push({ line: lineOf(text, 'user'), message: '[user] total_money_as_of_day must be an integer 1-31' });
     } else settings.totalMoneyAsOfDay = d;
   }
 

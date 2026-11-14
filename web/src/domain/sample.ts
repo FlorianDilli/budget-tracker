@@ -1,11 +1,11 @@
 // Synthetic first-run content. It is shown as a draft and is saved only when the
 // user saves it (Decision 15 / merge rule 5). It contains no real figures.
 
-export const SAMPLE_SETTINGS = `# Sample settings (synthetic). Edit and press Save to keep.
+export const SAMPLE_SETTINGS = `# Sample settings (synthetic). Changes are saved automatically.
 [user]
 currency_symbol = "EUR"
 round_amounts   = false
-total_money_as_of_day = 0
+total_money_as_of_day = 31
 
 [[importer.formats]]
 name               = "Demo Bank"

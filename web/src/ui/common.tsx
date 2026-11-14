@@ -1,12 +1,15 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import type { Financials, Settings } from '../domain/config';
 import type { Snapshot } from '../domain/snapshot';
 import { centsToDecimal, type Cents } from '../domain/money';
 import { currentMonth, monthLabel, monthRange, type YearMonth } from '../domain/dates';
+import { SessionContext } from '../state/session';
 
-export function Money({ cents, currency, className }: { cents: Cents; currency: string; className?: string }) {
+export function Money({ cents, currency, className, round }: { cents: Cents; currency: string; className?: string; round?: boolean }) {
+  const session = useContext(SessionContext);
+  const whole = round ?? session?.settings?.roundAmounts ?? false;
   const cls = [className, cents < 0 ? 'neg' : cents > 0 ? 'pos' : ''].filter(Boolean).join(' ');
-  return <span className={cls}>{`${centsToDecimal(cents)} ${currency}`}</span>;
+  return <span className={cls}>{`${centsToDecimal(cents, whole)} ${currency}`}</span>;
 }
 
 export function Card({ title, children, wide, info }: { title?: string; children: ReactNode; wide?: boolean; info?: string }) {

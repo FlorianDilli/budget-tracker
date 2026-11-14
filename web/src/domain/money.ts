@@ -41,8 +41,20 @@ export function sumCents(values: Iterable<Cents>): Cents {
   return total;
 }
 
-/** Fixed two-decimal representation, e.g. -1234 -> "-12.34". */
-export function centsToDecimal(cents: Cents): string {
+/** Rounds cents to whole currency units, half away from zero (e.g. 1050 -> 11 whole units). */
+export function roundToWholeUnits(cents: Cents): Cents {
+  return roundHalfAwayFromZero(cents / 100) * 100;
+}
+
+/**
+ * Fixed two-decimal representation, e.g. -1234 -> "-12.34".
+ * With `wholeUnits`, the value is first rounded to whole units: -1234 -> "-12".
+ */
+export function centsToDecimal(cents: Cents, wholeUnits = false): string {
+  if (wholeUnits) {
+    const rounded = roundToWholeUnits(cents);
+    return `${rounded < 0 ? '-' : ''}${Math.abs(rounded) / 100}`;
+  }
   const sign = cents < 0 ? '-' : '';
   const abs = Math.abs(cents);
   const whole = Math.floor(abs / 100);
@@ -50,6 +62,6 @@ export function centsToDecimal(cents: Cents): string {
   return `${sign}${whole}.${frac}`;
 }
 
-export function formatMoney(cents: Cents, currency = 'EUR'): string {
-  return `${centsToDecimal(cents)} ${currency}`;
+export function formatMoney(cents: Cents, currency = 'EUR', wholeUnits = false): string {
+  return `${centsToDecimal(cents, wholeUnits)} ${currency}`;
 }

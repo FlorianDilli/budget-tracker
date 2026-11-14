@@ -28,6 +28,12 @@ describe('money', () => {
     expect(centsToDecimal(-1205)).toBe('-12.05');
     expect(centsToDecimal(5)).toBe('0.05');
   });
+  it('formats whole units when rounding is enabled', () => {
+    expect(centsToDecimal(1050, true)).toBe('11');
+    expect(centsToDecimal(-1050, true)).toBe('-11');
+    expect(centsToDecimal(1049, true)).toBe('10');
+    expect(centsToDecimal(1050)).toBe('10.50');
+  });
 });
 
 describe('dates', () => {

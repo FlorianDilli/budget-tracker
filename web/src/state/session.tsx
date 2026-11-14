@@ -52,7 +52,7 @@ interface SessionValue {
   restoreBackup: (snapshot: Snapshot) => Promise<void>;
 }
 
-const SessionContext = createContext<SessionValue | null>(null);
+export const SessionContext = createContext<SessionValue | null>(null);
 
 function nowIso(): string {
   return new Date().toISOString();

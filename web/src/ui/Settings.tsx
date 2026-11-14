@@ -86,8 +86,12 @@ function SettingsForm() {
   const [form, setForm] = useState<Settings>(() => readSettings(baseText));
   const [customDateFormats, setCustomDateFormats] = useState<Record<number, boolean>>({});
   const [notice, setNotice] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   // The text this form last wrote to the session draft. Anything else means an outside change (discard, reload).
   const pushed = useRef(baseText);
+  const initialText = useRef(serializeSettings(readSettings(baseText)));
+  const saveSettingsRef = useRef(saveSettings);
+  saveSettingsRef.current = saveSettings;
 
   useEffect(() => {
     if (baseText !== pushed.current) {
@@ -105,7 +109,8 @@ function SettingsForm() {
   );
   const valid = issues.length === 0 && requiredFieldsValid;
   const text = serializeSettings(form);
-  const dirty = isSample || text !== serializeSettings(readSettings(savedText));
+  // Autosave as soon as the user changes anything (skip the untouched initial value).
+  const dirty = text !== initialText.current && text !== serializeSettings(readSettings(savedText));
 
   const update = (next: Settings) => {
     setForm(next);
@@ -117,20 +122,24 @@ function SettingsForm() {
     }
   };
 
-  const save = async () => {
-    if (!valid) return;
-    setNotice(null);
-    const result: SaveResult = await saveSettings(text);
-    setNotice(result.ok ? 'Saved and applied.' : 'Not saved. Fix the errors first.');
-  };
-
-  const discard = () => {
-    pushed.current = originalText;
-    setDraft('settings', originalText);
-    setForm(readSettings(originalText));
-    setCustomDateFormats({});
-    setNotice(null);
-  };
+  // Auto-save: no manual Save/Apply button. Debounced so typing does not spam writes.
+  useEffect(() => {
+    if (!valid || !dirty) return;
+    setSaving(true);
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const result: SaveResult = await saveSettingsRef.current(text);
+          setNotice(result.ok ? 'Saved automatically.' : 'Not saved. Fix the errors to save.');
+        } catch {
+          setNotice('Not saved. Fix the errors to save.');
+        } finally {
+          setSaving(false);
+        }
+      })();
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [text, valid, dirty]);
 
   const patchFormat = (index: number, patch: Partial<ImportFormat>) =>
     update({ ...form, formats: form.formats.map((f, i) => (i === index ? { ...f, ...patch } : f)) });
@@ -160,9 +169,9 @@ function SettingsForm() {
           <label><span className="setting-label">Currency symbol<InfoButton label="Currency symbol" text="The symbol or code shown beside money amounts, such as €, EUR, or $." /></span>
             <input value={form.currencySymbol} maxLength={8} aria-invalid={!form.currencySymbol.trim()} onChange={(e) => update({ ...form, currencySymbol: e.target.value })} />
           </label>
-          <label><span className="setting-label">On which day of the month is your total measured?<InfoButton label="On which day of the month is your total measured?" text="For every month we calculate your total money as of this day of the month. Example: with 15, the June total includes transactions up to 15 June; transactions from 16–30 June count towards July. With 0, the total is measured at the end of the month (today for the current month)." /></span>
-            <input type="number" min={0} max={31} step={1} value={form.totalMoneyAsOfDay} aria-describedby="total-day-help" onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 0 && n <= 31) update({ ...form, totalMoneyAsOfDay: n }); }} />
-            <span className="muted small" id="total-day-help">{form.totalMoneyAsOfDay === 0 ? 'End of month: the total counts the whole month.' : `Day ${form.totalMoneyAsOfDay} of each month: later transactions count towards the next month.`}</span>
+          <label><span className="setting-label">On which day of the month is your total measured?<InfoButton label="On which day of the month is your total measured?" text="For every month we calculate your total money as of this day of the month. Example: with 15, the June total includes transactions up to 15 June; transactions from 16–30 June count towards July. With 31 (end of month), the total is measured on the last day of the month — in a 30-day month that is the 30th (today for the current month)." /></span>
+            <input type="number" min={1} max={31} step={1} value={form.totalMoneyAsOfDay} aria-describedby="total-day-help" onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 1 && n <= 31) update({ ...form, totalMoneyAsOfDay: n }); }} />
+            <span className="muted small" id="total-day-help">Day {form.totalMoneyAsOfDay} of each month{form.totalMoneyAsOfDay === 31 ? ' (last day; in shorter months the last day counts)' : ''}: later transactions count towards the next month.</span>
           </label>
           <label className="check">
             <input type="checkbox" checked={form.roundAmounts} onChange={(e) => update({ ...form, roundAmounts: e.target.checked })} />
@@ -286,9 +295,7 @@ function SettingsForm() {
       </Card>
 
       <footer className="settings-actions">
-        <button type="button" className="primary" onClick={save} disabled={!dirty || !valid}>Save</button>
-        <button type="button" onClick={discard} disabled={!dirty}>Discard changes</button>
-        {notice && <span className="muted" role="status">{notice}</span>}
+        <span className="muted" role="status">{saving ? 'Saving…' : notice ?? (valid ? 'Settings are saved automatically.' : 'Fix the errors above to save.')}</span>
       </footer>
     </div>
   );
@@ -365,8 +372,15 @@ function ExportCard() {
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      // The anchor must be in the DOM, otherwise some browsers ignore the
+      // download attribute and save the file under the blob URL (a UUID).
+      document.body.appendChild(a);
+      try {
+        a.click();
+      } finally {
+        a.remove();
+        URL.revokeObjectURL(url);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }

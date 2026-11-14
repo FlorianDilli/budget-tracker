@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useSession } from '../state/session';
 import { analyzeMonth } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
@@ -33,14 +33,17 @@ export function Insights() {
     });
   }, [snapshot, settings, financials, now, cutoff]);
 
-  const withData = rows.filter((r) => r.hasData);
   // Chart starts at the first month with transactions, not where the budget plan starts.
   const firstTx = rows.findIndex((r) => r.hasTx);
   const chartRows = firstTx >= 0 ? rows.slice(firstTx) : rows;
+  // The monthly report below the plot starts at the same month as the plot.
+  const reportRows = chartRows;
+  const withData = reportRows.filter((r) => r.hasData);
   const avg = (key: 'budget' | 'spend' | 'left') => {
     if (!withData.length) return 0;
     return Math.round(sumCents(withData.map((r) => r[key])) / withData.length);
   };
+  const round = settings.roundAmounts;
 
   return (
     <div className="page">
@@ -48,34 +51,43 @@ export function Insights() {
       <PreviewNotice isSample={isSample} />
 
       <Card title="Total money over time" wide>
-        <TotalChart rows={chartRows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} />
+        <TotalChart rows={chartRows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} round={round} />
         <p className="muted small">Measured on the day set by total_money_as_of_day (settings.toml); each point is the month's measurement date.</p>
       </Card>
 
       <Card title="Months at a glance" wide>
-        {rows.length === 0 ? <p className="muted">No months to show yet.</p> : (
+        {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
           <table className="tx-table">
             <thead>
               <tr><th>Month</th><th className="num">Plan budget</th><th className="num">Spending</th><th className="num">Left</th><th className="num">Total money</th></tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.ym} className={r.hasData ? '' : 'muted'}>
-                  <td>{monthLabel(r.ym)}</td>
-                  <td className="num"><Money cents={r.budget} currency={cur} /></td>
-                  <td className="num"><Money cents={r.spend} currency={cur} /></td>
-                  <td className="num"><Money cents={r.left} currency={cur} /></td>
-                  <td className="num"><Money cents={r.total} currency={cur} /></td>
-                </tr>
-              ))}
+              {reportRows.map((r, i) => {
+                const year = r.ym.slice(0, 4);
+                const newYear = i === 0 || reportRows[i - 1].ym.slice(0, 4) !== year;
+                return (
+                  <Fragment key={r.ym}>
+                    {newYear && (
+                      <tr className="year-row"><td colSpan={5}>{year}</td></tr>
+                    )}
+                    <tr className={r.hasData ? '' : 'muted'}>
+                      <td>{monthLabel(r.ym)}</td>
+                      <td className="num"><Money cents={r.budget} currency={cur} /></td>
+                      <td className="num"><Money cents={r.spend} currency={cur} /></td>
+                      <td className="num"><Money cents={r.left} currency={cur} /></td>
+                      <td className="num"><Money cents={r.total} currency={cur} /></td>
+                    </tr>
+                  </Fragment>
+                );
+              })}
             </tbody>
             {withData.length > 0 && (
               <tfoot>
                 <tr>
                   <td>Average</td>
-                  <td className="num">{centsToDecimal(avg('budget'))} {cur}</td>
-                  <td className="num">{centsToDecimal(avg('spend'))} {cur}</td>
-                  <td className="num">{centsToDecimal(avg('left'))} {cur}</td>
+                  <td className="num">{centsToDecimal(avg('budget'), round)} {cur}</td>
+                  <td className="num">{centsToDecimal(avg('spend'), round)} {cur}</td>
+                  <td className="num">{centsToDecimal(avg('left'), round)} {cur}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -87,7 +99,7 @@ export function Insights() {
   );
 }
 
-function TotalChart({ rows, currency }: { rows: Row[]; currency: string }) {
+function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; round?: boolean }) {
   if (rows.length < 2) return <p className="muted">Need at least two months to draw the chart.</p>;
   const W = 640;
   const H = 260;
@@ -121,8 +133,8 @@ function TotalChart({ rows, currency }: { rows: Row[]; currency: string }) {
           )}
         </g>
       ))}
-      <text x={4} y={y(max) + 4} className="axis-label">{centsToDecimal(max)}</text>
-      <text x={4} y={y(min) + 4} className="axis-label">{centsToDecimal(min)} {currency}</text>
+      <text x={4} y={y(max) + 4} className="axis-label">{centsToDecimal(max, round)}</text>
+      <text x={4} y={y(min) + 4} className="axis-label">{centsToDecimal(min, round)} {currency}</text>
     </svg>
   );
 }

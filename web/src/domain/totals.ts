@@ -26,19 +26,13 @@ export function asOfForMonth(ym: YearMonth, settings: Settings, now: Date): IsoD
   const today = todayIso(now);
   const todayYm = today.slice(0, 7);
   const last = monthLast(ym);
-  if (ym === todayYm) {
-    if (settings.totalMoneyAsOfDay > 0) {
-      const day = Math.min(settings.totalMoneyAsOfDay, Number(last.slice(8)));
-      const configured = `${ym}-${String(day).padStart(2, '0')}`;
-      return configured < today ? configured : today;
-    }
-    return today;
-  }
-  if (settings.totalMoneyAsOfDay > 0) {
-    const day = Math.min(settings.totalMoneyAsOfDay, Number(last.slice(8)));
-    return `${ym}-${String(day).padStart(2, '0')}`;
-  }
-  return last;
+  // Day 1-31, clipped to the month's length (31 in a 30-day month -> the 30th).
+  // Legacy 0 is treated as the last day (31) for safety.
+  const configuredDay = settings.totalMoneyAsOfDay === 0 ? 31 : settings.totalMoneyAsOfDay;
+  const day = Math.min(configuredDay, Number(last.slice(8)));
+  const configured = `${ym}-${String(day).padStart(2, '0')}`;
+  if (ym === todayYm) return configured < today ? configured : today;
+  return configured;
 }
 
 /**

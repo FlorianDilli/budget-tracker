@@ -185,6 +185,8 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 tr.selected { background: var(--bg); }
 tbody tr { cursor: default; }
 .tx-table tbody tr { cursor: pointer; }
+.tx-table tr.year-row { background: var(--bg); cursor: default; }
+.tx-table tr.year-row td { font-weight: 700; font-size: 0.8rem; padding-top: 0.6rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border); }
 .detail { display: grid; grid-template-columns: max-content 1fr; gap: 0.3rem 1rem; margin: 0; }
 .detail dt { color: var(--muted); }
 .detail dd { margin: 0; }

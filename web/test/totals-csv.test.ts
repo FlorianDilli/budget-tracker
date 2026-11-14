@@ -53,6 +53,17 @@ describe('total money', () => {
     expect(asOfForMonth('2026-11', s.value, new Date(2026, 9, 10))).toBe('2026-11-28');
   });
 
+  it('clips day 31 to the last day of shorter months and migrates legacy 0', () => {
+    const s31 = ps('[user]\ntotal_money_as_of_day = 31\n');
+    if (!s31.ok) throw new Error('bad');
+    expect(asOfForMonth('2025-02', s31.value, new Date(2026, 0, 1))).toBe('2025-02-28');
+    expect(asOfForMonth('2026-04', s31.value, new Date(2026, 5, 1))).toBe('2026-04-30');
+    const legacy = ps('[user]\ntotal_money_as_of_day = 0\n');
+    if (!legacy.ok) throw new Error('legacy 0 should still parse');
+    expect(legacy.value.totalMoneyAsOfDay).toBe(31);
+    expect(asOfForMonth('2025-02', legacy.value, new Date(2026, 0, 1))).toBe('2025-02-28');
+  });
+
   it('reconstructs historical balances by unwinding through the snapshot date', () => {
     const s = parseSettings(SETTINGS);
     const f = parseFinancials('[cash]\nentries = [{date = "2025-01-01", amount = 5}]');

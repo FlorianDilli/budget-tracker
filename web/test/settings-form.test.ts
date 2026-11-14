@@ -62,11 +62,11 @@ async function typeInto(input: HTMLInputElement, value: string) {
 it('edits settings through the form and saves valid generated TOML', async () => {
   await render();
   expect(container.querySelector('textarea')).toBeNull();
-  expect(button('Save').disabled).toBe(true);
+  expect(button('Save')).toBeUndefined();
+  expect(container.textContent).toContain('Settings are saved automatically.');
 
   await typeInto(field('Currency symbol'), 'USD');
-  expect(button('Save').disabled).toBe(false);
-  await act(async () => button('Save').click());
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
 
   const text = saveSettings.mock.calls[0][0] as string;
   const parsed = parseSettings(text);
@@ -81,12 +81,27 @@ it('edits settings through the form and saves valid generated TOML', async () =>
 it('blocks saving while a required import column is empty', async () => {
   await render();
   await typeInto(field('Date column'), '   ');
-  expect(button('Save').disabled).toBe(true);
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
+  expect(saveSettings).not.toHaveBeenCalled();
   expect(field('Date column').closest('label')?.querySelector('.field-error')?.textContent).toBe('Date column is required.');
   expect(container.querySelector('[role=alert]')).toBeNull();
   await typeInto(field('Date column'), 'Booking Date');
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
   expect(field('Date column').closest('label')?.querySelector('.field-error')).toBeNull();
-  expect(button('Save').disabled).toBe(true);
+  // Reverting to the saved value means there is nothing new to save.
+  expect(saveSettings).not.toHaveBeenCalled();
+});
+
+it('auto-saves settings without a manual Save button', async () => {
+  await render();
+  await typeInto(field('Currency symbol'), 'GBP');
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
+  expect(saveSettings).toHaveBeenCalledTimes(1);
+  const text = saveSettings.mock.calls[0][0] as string;
+  const parsed = parseSettings(text);
+  expect(parsed.ok).toBe(true);
+  if (parsed.ok) expect(parsed.value.currencySymbol).toBe('GBP');
+  expect(container.textContent).toContain('Saved automatically.');
 });
 
 it('lets an opening balance be edited as natural decimal text', async () => {
@@ -99,7 +114,7 @@ it('lets an opening balance be edited as natural decimal text', async () => {
   expect(balance.value).toBe('123.');
   await act(async () => balance.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
   expect(balance.value).toBe('123.00');
-  await act(async () => button('Save').click());
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
 
   const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
   expect(parsed.ok).toBe(true);
@@ -116,7 +131,7 @@ it('offers human-readable date formats and saves the selected pattern', async ()
     dateFormat.value = '%Y.%m.%d';
     dateFormat.dispatchEvent(new Event('change', { bubbles: true }));
   });
-  await act(async () => button('Save').click());
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
 
   const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
   expect(parsed.ok).toBe(true);
@@ -127,8 +142,9 @@ it('adds an import format and reports the missing columns until it is complete',
   await render();
   expect(container.querySelectorAll('.format-card')).toHaveLength(1);
   await act(async () => button('Add format').click());
+  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
   expect(container.querySelectorAll('.format-card')).toHaveLength(2);
-  expect(button('Save').disabled).toBe(true);
+  expect(saveSettings).not.toHaveBeenCalled();
   const newFormat = container.querySelectorAll<HTMLElement>('.format-card')[1];
   expect(container.querySelector('[role=alert]')).toBeNull();
   expect(newFormat.querySelectorAll('.field-error')).toHaveLength(3);
