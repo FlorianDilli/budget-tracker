@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { EditorState, Compartment } from '@codemirror/state';
+import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection, highlightSpecialChars } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab, undo, redo } from '@codemirror/commands';
 import { search, searchKeymap, openSearchPanel } from '@codemirror/search';
@@ -17,7 +17,6 @@ export interface TomlEditorHandle {
 interface Props {
   value: string;
   onChange: (text: string) => void;
-  wrap: boolean;
   ariaLabel: string;
 }
 
@@ -35,10 +34,9 @@ const tomlHighlight = HighlightStyle.define([
   { tag: t.operator, color: 'var(--code-operator)', fontWeight: '700' },
 ]);
 
-export const TomlEditor = forwardRef<TomlEditorHandle, Props>(function TomlEditor({ value, onChange, wrap, ariaLabel }, ref) {
+export const TomlEditor = forwardRef<TomlEditorHandle, Props>(function TomlEditor({ value, onChange, ariaLabel }, ref) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
-  const wrapComp = useRef(new Compartment());
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
 
@@ -59,7 +57,6 @@ export const TomlEditor = forwardRef<TomlEditorHandle, Props>(function TomlEdito
           tomlLang,
           syntaxHighlighting(tomlHighlight),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
-          wrapComp.current.of(wrap ? EditorView.lineWrapping : []),
           EditorView.contentAttributes.of({ 'aria-label': ariaLabel, spellcheck: 'false', autocapitalize: 'off' }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged) onChangeRef.current(u.state.doc.toString());
@@ -69,15 +66,9 @@ export const TomlEditor = forwardRef<TomlEditorHandle, Props>(function TomlEdito
     });
     view.current = v;
     return () => v.destroy();
-    // The editor is created once; value/wrap changes are synced below.
+    // The editor is created once; value changes are synced below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    const v = view.current;
-    if (!v) return;
-    v.dispatch({ effects: wrapComp.current.reconfigure(wrap ? EditorView.lineWrapping : []) });
-  }, [wrap]);
 
   useEffect(() => {
     const v = view.current;

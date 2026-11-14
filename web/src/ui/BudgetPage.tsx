@@ -22,7 +22,6 @@ export function BudgetPage() {
   // Narrow screens default to the visual budget because the split layout does not fit.
   const [defaultView] = useState<View>(() => (window.innerWidth < 900 ? 'budget' : 'split'));
   const [view, setView] = useSectionParam<View>('view', VIEWS, defaultView);
-  const [wrap, setWrap] = useState(false);
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);
   const [legacyDraft] = useState(() => {
@@ -80,9 +79,8 @@ export function BudgetPage() {
           <button type="button" onClick={() => editor.current?.undo()}>Undo</button>
           <button type="button" onClick={() => editor.current?.redo()}>Redo</button>
           <button type="button" onClick={() => editor.current?.search()}>Search</button>
-          <button type="button" aria-pressed={wrap} onClick={() => setWrap(!wrap)}>Wrap</button>
         </div>
-        <TomlEditor ref={editor} value={draft} onChange={(text) => { session.setDraft('financials', text); setNotice(''); }} wrap={wrap} ariaLabel="financials.toml editor" />
+        <TomlEditor ref={editor} value={draft} onChange={(text) => { session.setDraft('financials', text); setNotice(''); }} ariaLabel="financials.toml editor" />
         {issue && <div className="error-banner" role="alert"><span>{issue.line ? `Line ${issue.line}: ` : ''}{issue.message}</span>{issue.line > 0 && <button type="button" onClick={() => editor.current?.jumpToLine(issue.line)}>Jump to line</button>}</div>}
       </div>
       <div className="studio-inspector" hidden={view === 'editor'}>

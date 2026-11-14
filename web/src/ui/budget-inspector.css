@@ -68,12 +68,20 @@
 .bi-diff-new { color: var(--bi-green) !important; }
 .bi-diff-changed { color: var(--bi-amber) !important; }
 .bi-diff-removed { color: var(--bi-red) !important; }
-.bi-change-values { display: inline-flex; align-items: center; gap: 6px; }
-.bi-change-delta { color: var(--bi-amber); font-family: var(--bi-mono); font-size: .72rem; }
 .bi-amount-removed { opacity: .5; text-decoration: line-through; }
-.bi-change del { text-decoration: line-through; }
-.bi-change { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--bi-border); font-size: .8rem; }
-.bi-change span:last-child { font-family: var(--bi-mono); white-space: nowrap; }
+.bi-change { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--bi-border); font-size: .8rem; }
+.bi-change-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.bi-change-values { display: inline-flex; align-items: center; gap: 6px; font-family: var(--bi-mono); white-space: nowrap; }
+.bi-change.is-changed { flex-direction: column; align-items: stretch; gap: 5px; }
+.bi-change-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.bi-delta-pill { flex-shrink: 0; padding: 2px 8px; border: 1px solid currentColor; border-radius: 999px; font-family: var(--bi-mono); font-size: .72rem; font-weight: 800; white-space: nowrap; }
+.bi-delta-pill small { margin-left: 3px; font-size: .62rem; font-weight: 600; opacity: .7; }
+.bi-change-flow { display: flex; align-items: baseline; gap: 8px; font-family: var(--bi-mono); font-size: .78rem; }
+.bi-change-step { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.bi-change-step small { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--bi-faint); }
+.bi-change-step del { color: var(--bi-muted); text-decoration: line-through; }
+.bi-change-step > span { font-weight: 800; }
+.bi-change-arrow { color: var(--bi-faint); font-weight: 800; }
 .bi-cash { display: flex; justify-content: space-between; gap: 8px; padding: 10px 12px; font-size: .78rem; }
 .bi-cash strong:last-child { font-family: var(--bi-mono); }
 .bi-transactions { display: grid; grid-template-columns: 1fr; gap: 10px; }
