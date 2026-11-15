@@ -13,7 +13,9 @@
 .budget-studio.is-budget .studio-panels { flex: none; overflow: visible; }
 .studio-status-actions { display: flex; gap: 6px; margin-left: auto; }
 .studio-status-actions button { padding: 2px 8px; font-size: .72rem; }
-.studio-footer { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--border); }
+.studio-budget-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border); }
+.studio-budget-actions button { flex-shrink: 0; padding: 3px 8px; border-radius: 6px; font-size: .78rem; font-weight: 700; }
+.studio-budget-actions button.primary { background: var(--accent); border-color: transparent; color: #11140e; }
 .studio-panels { background: transparent; }
 .studio-status { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 5px 12px; background: var(--bg); border-bottom: 1px solid var(--border); color: var(--muted); font-size: .73rem; }
 .studio-panels { display: flex; flex: 1; min-height: 0; overflow: hidden; }

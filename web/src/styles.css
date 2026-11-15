@@ -168,7 +168,14 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .page { display: flex; flex-direction: column; gap: 1rem; }
 .page-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
-.month-select { flex-direction: row; align-items: center; gap: 0.5rem; }
+.page-heading { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.page-heading h1 { margin: 0; }
+.page-heading > p { max-width: 38rem; margin: .3rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.month-select { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 0.5rem; padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; }
+.month-select select { flex: 1 1 auto; padding: .4rem .5rem; border-radius: 7px; font-size: .82rem; font-weight: 700; }
+/* Unified selector look: every <select> matches the transaction-month selector. */
+select { padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; color: inherit; }
+select:focus-visible { outline: 2px solid #83bd31; outline-offset: 2px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; min-width: 0; }
 .card.wide { grid-column: 1 / -1; }
 .grid-2 { display: grid; grid-template-columns: 1fr; gap: 1rem; }
@@ -196,10 +203,13 @@ tbody tr { cursor: default; }
 .mapping-controls p { flex-basis: 100%; margin: 0; }
 .chart { width: 100%; height: auto; color: var(--text); }
 .chart .axis { stroke: var(--border); }
+.chart .grid { stroke: var(--border); stroke-width: 1; opacity: .55; }
 .chart .series { stroke: var(--accent); stroke-width: 2; }
 .chart circle { fill: var(--accent); }
+.chart circle.extremum { fill: var(--text); stroke: var(--accent); stroke-width: 1.5; }
 .chart text { fill: var(--muted); font-size: 11px; }
 .chart .axis-label { font-size: 10px; }
+.chart .point-label { fill: var(--text); font-size: 11px; font-weight: 800; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
 
 .editor-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 .pane { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
@@ -315,7 +325,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 /* Visual budget inspector */
 .budget { gap: .85rem; }
 .budget-toolbar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .6rem; }
-.budget-toolbar select, .year-control button { border-radius: 999px; }
+.budget-toolbar select, .year-control button { border-radius: 10px; }
 .month-overview, .budget-changes, .budget-list { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
 .month-overview { padding: .75rem; }
 .budget-caption { margin-bottom: .6rem; }
@@ -475,15 +485,12 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
    max-width or enlarged heading, so the topbar/logo and page head share one zoom level. */
 .transactions-page { gap: 1.2rem; }
 .transactions-head { align-items: center; }
-.transactions-heading { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
 .transactions-heading h1 { font-size: 1.65rem; letter-spacing: -.04em; }
-.transactions-heading > p { max-width: 38rem; margin: .3rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
-.transactions-eyebrow, .import-eyebrow { color: var(--muted); font-size: .67rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.transactions-head .month-select { flex: 0 0 auto; padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; }
-.transactions-head .month-select select { border-radius: 7px; }
+.transactions-head .section-tabs { margin-left: auto; }
+.transactions-controls { display: flex; justify-content: flex-start; }
 .import-panel { display: flex; flex-direction: column; gap: 1rem; padding: clamp(1rem, 2.5vw, 1.6rem); overflow: visible; border-color: color-mix(in srgb, var(--accent) 20%, var(--border)); background: linear-gradient(125deg, color-mix(in srgb, var(--accent) 5%, var(--surface)), var(--surface) 48%); }
 .import-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
-.import-panel-heading h2 { margin: .25rem 0 .25rem; font-size: clamp(1.08rem, 2vw, 1.3rem); letter-spacing: -.025em; }
+.import-panel-heading h2 { margin: 0 0 .25rem; font-size: clamp(1.08rem, 2vw, 1.3rem); letter-spacing: -.025em; }
 .import-panel-heading p { max-width: 47rem; margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.55; }
 .import-format-mark { display: grid; flex: 0 0 auto; place-items: center; width: 3.1rem; height: 3.1rem; border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 13%, var(--surface)); color: var(--text); font-family: var(--mono); font-size: .72rem; font-weight: 850; letter-spacing: .03em; }
 .import-formats { margin: .55rem 0 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
@@ -506,7 +513,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .import-setup-note a { color: var(--text); font-weight: 700; text-underline-offset: 3px; }
 .import-panel .mapping-controls { padding-top: .85rem; border-top: 1px solid var(--border); }
 .import-panel .mapping-controls label { min-width: 130px; font-size: .75rem; font-weight: 700; }
-.import-panel .mapping-controls select { min-height: 2.5rem; background: var(--bg); font-size: .8rem; }
+.import-panel .mapping-controls select { min-height: 2.5rem; background: var(--surface); font-size: .8rem; }
 .import-panel .mapping-controls button { min-height: 2.5rem; font-size: .8rem; font-weight: 700; }
 .import-panel .preview { padding-top: .8rem; border-top: 1px solid var(--border); }
 .import-panel .preview > p { margin: 0; color: var(--muted); font-size: .82rem; }
@@ -516,11 +523,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .transactions-empty p { margin: .2rem 0 0; color: var(--muted); font-size: .8rem; }
 @media (max-width: 680px) {
   .transactions-head { align-items: flex-start; }
-  .transactions-head .month-select { margin-top: .25rem; }
+  .transactions-head .section-tabs { margin-left: auto; }
 }
 @media (max-width: 430px) {
   .transactions-head { flex-direction: column; }
-  .transactions-head .month-select { align-self: flex-start; }
+  .transactions-head .section-tabs { margin-left: 0; align-self: flex-start; }
 }
 .format-empty > button { flex: 0 0 auto; min-height: 2.65rem; padding-inline: 1rem; }
 .format-add { margin-top: 1rem; }

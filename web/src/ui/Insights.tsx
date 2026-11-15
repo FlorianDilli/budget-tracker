@@ -47,7 +47,12 @@ export function Insights() {
 
   return (
     <div className="page">
-      <header className="page-head"><h1>Insights</h1></header>
+      <header className="page-head">
+        <div className="page-heading">
+          <h1>Insights</h1>
+          <p>See how your total money, budgets and spending develop over time.</p>
+        </div>
+      </header>
       <PreviewNotice isSample={isSample} />
 
       <Card title="Total money over time" wide>
@@ -103,8 +108,8 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
   if (rows.length < 2) return <p className="muted">Need at least two months to draw the chart.</p>;
   const W = 640;
   const H = 260;
-  const pad = 36;
-  const padTop = 16;
+  const pad = 72;
+  const padTop = 28;
   const padBottom = 64; // room for rotated x labels
   const vals = rows.map((r) => r.total);
   const min = Math.min(...vals, 0);
@@ -121,20 +126,49 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
   const step = Math.max(1, Math.ceil(rows.length / maxLabels));
   const showLabel = (i: number) => i === 0 || i === rows.length - 1 || i % step === 0;
   const labelY = H - padBottom + 14;
+  // Horizontal gridlines with nice value ticks so large values are easy to estimate.
+  const niceStep = (raw: number) => {
+    const magnitude = 10 ** Math.floor(Math.log10(Math.abs(raw)));
+    const normalized = raw / magnitude;
+    const nice = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 2.5 ? 2.5 : normalized <= 5 ? 5 : 10;
+    return nice * magnitude;
+  };
+  const tickStep = niceStep(span / 4);
+  const ticks: number[] = [];
+  if (tickStep > 0) {
+    for (let t = Math.ceil(min / tickStep) * tickStep; t <= max; t += tickStep) {
+      ticks.push(Math.round(t));
+    }
+  }
+  if (ticks.length === 0) ticks.push(min, max);
+  const maxVal = Math.max(...vals);
+  const minVal = Math.min(...vals);
+  const maxIdx = vals.indexOf(maxVal);
+  const minIdx = vals.indexOf(minVal);
+  const pointAnchor = (i: number) => (i === 0 ? 'start' : i === rows.length - 1 ? 'end' : 'middle');
+  const pointDx = (i: number) => (i === 0 ? 6 : i === rows.length - 1 ? -6 : 0);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`Total money from ${monthOf(rows[0].ym)} to ${monthOf(rows[rows.length - 1].ym)}`}>
-      <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} className="axis" />
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={pad} x2={W - pad} y1={y(t)} y2={y(t)} className={t === 0 ? 'axis' : 'grid'} />
+          <text x={4} y={y(t) + 4} className="axis-label">{centsToDecimal(t, round)} {currency}</text>
+        </g>
+      ))}
+      {ticks.every((t) => t !== 0) && <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} className="axis" />}
       <polyline points={points} className="series" fill="none" />
       {rows.map((r, i) => (
         <g key={r.ym}>
-          <circle cx={x(i)} cy={y(r.total)} r={3} />
+          <circle cx={x(i)} cy={y(r.total)} r={3} className={i === maxIdx || i === minIdx ? 'extremum' : undefined} />
           {showLabel(i) && (
             <text x={x(i)} y={labelY} textAnchor="end" transform={`rotate(-45 ${x(i)} ${labelY})`}>{r.ym}</text>
           )}
         </g>
       ))}
-      <text x={4} y={y(max) + 4} className="axis-label">{centsToDecimal(max, round)} {currency}</text>
-      <text x={4} y={y(min) + 4} className="axis-label">{centsToDecimal(min, round)} {currency}</text>
+      <text x={x(maxIdx) + pointDx(maxIdx)} y={y(maxVal) - 10} textAnchor={pointAnchor(maxIdx)} className="point-label">{centsToDecimal(maxVal, round)} {currency}</text>
+      {minIdx !== maxIdx && (
+        <text x={x(minIdx) + pointDx(minIdx)} y={y(minVal) + 20} textAnchor={pointAnchor(minIdx)} className="point-label">{centsToDecimal(minVal, round)} {currency}</text>
+      )}
     </svg>
   );
 }

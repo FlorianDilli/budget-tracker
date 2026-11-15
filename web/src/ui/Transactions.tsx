@@ -47,14 +47,17 @@ export function Transactions() {
   return (
     <div className="page transactions-page">
       <header className="page-head transactions-head">
-        <div className="transactions-heading">
-          <span className="transactions-eyebrow">Your activity</span>
+        <div className="page-heading transactions-heading">
           <h1>Transactions</h1>
           <p>{tab === 'formats' ? 'Describe how your bank CSV exports are read.' : tab === 'import' ? 'Add bank CSVs to build and update your transaction history.' : 'Review your imported transactions.'}</p>
         </div>
         <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Transactions sections" />
-        {tab === 'transactions' && hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />}
       </header>
+      {tab === 'transactions' && hasTransactions && (
+        <div className="transactions-controls">
+          <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />
+        </div>
+      )}
       {hasTransactions && <PreviewNotice isSample={isSample} />}
 
       {tab === 'import' && (
@@ -194,7 +197,6 @@ function ImportPanel({
     <section className="import-panel card wide" aria-labelledby="import-title">
       <div className="import-panel-heading">
         <div>
-          <span className="import-eyebrow">Update your records</span>
           <h2 id="import-title">Add transactions from a CSV</h2>
           <p>Upload a bank CSV and its transactions will be added automatically. Duplicates are skipped.</p>
           {formats.length > 0

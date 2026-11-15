@@ -117,9 +117,10 @@ describe('native budget studio', () => {
     expect(container.textContent).not.toContain('Unsaved preview');
     expect(container.querySelector('[aria-label="Open TOML file"]')).toBeNull();
     expect(container.querySelector('[aria-label="Download TOML file"]')).toBeNull();
-    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('ClearCopyUndoRedoSearch');
+    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('SaveDiscard changesClearCopyUndoRedoSearch');
     expect(container.querySelector('.studio-editor-actions button')?.textContent).not.toBe('Wrap');
-    expect(container.querySelector('.studio-footer .primary')?.textContent).toBe('Save');
+    expect(container.querySelector('.studio-editor-actions .primary')?.textContent).toBe('Save');
+    expect(container.querySelector('.studio-footer')).toBeNull();
   });
 
   it('shows the saved budget and disables save and source navigation for an invalid draft', async () => {

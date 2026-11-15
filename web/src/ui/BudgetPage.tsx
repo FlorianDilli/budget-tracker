@@ -63,9 +63,19 @@ export function BudgetPage() {
     const file = event.dataTransfer.files?.[0];
     if (file) void load(file);
   };
+  const discard = () => { session.setDraft('financials', isSample ? SAMPLE_FINANCIALS : snapshot.financialsToml); setNotice('Draft discarded.'); };
+  const saveDiscard = (
+    <>
+      <button type="button" className="primary" disabled={!dirty || !parsed.ok || saving} onClick={() => void save()}>{saving ? 'Saving' : 'Save'}</button>
+      <button type="button" disabled={!dirty || saving} onClick={discard}>Discard changes</button>
+    </>
+  );
   return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}`}>
     <header className="page-head budget-page-head">
-      <h1>Budget</h1>
+      <div className="page-heading">
+        <h1>Budget</h1>
+        <p>Plan recurring income and expenses in TOML or visually.</p>
+      </div>
       <SectionTabs items={VIEW_ITEMS} value={view} onChange={setView} label="Budget view" />
     </header>
     <PreviewNotice isSample={isSample} />
@@ -74,6 +84,7 @@ export function BudgetPage() {
     <div className={`studio-panels studio-${view}`}>
       <div className="studio-editor" hidden={view === 'budget'}>
         <div className="studio-editor-actions" role="group" aria-label="Editor actions">
+          {saveDiscard}
           <button type="button" onClick={() => session.setDraft('financials', '')}>Clear</button>
           <button type="button" onClick={() => void navigator.clipboard?.writeText(draft)}>Copy</button>
           <button type="button" onClick={() => editor.current?.undo()}>Undo</button>
@@ -84,13 +95,14 @@ export function BudgetPage() {
         {issue && <div className="error-banner" role="alert"><span>{issue.line ? `Line ${issue.line}: ` : ''}{issue.message}</span>{issue.line > 0 && <button type="button" onClick={() => editor.current?.jumpToLine(issue.line)}>Jump to line</button>}</div>}
       </div>
       <div className="studio-inspector" hidden={view === 'editor'}>
+        {view === 'budget' && (
+          <div className="studio-budget-actions" role="group" aria-label="Budget actions">
+            {saveDiscard}
+          </div>
+        )}
         <BudgetInspector financials={display} onSourceLineClick={parsed.ok ? (line) => { setView(view === 'split' ? 'split' : 'editor'); setJump({ line }); } : undefined} />
       </div>
     </div>
-    <footer className="studio-footer">
-      <button type="button" className="primary" disabled={!dirty || !parsed.ok || saving} onClick={() => void save()}>{saving ? 'Saving' : 'Save'}</button>
-      <button type="button" disabled={!dirty || saving} onClick={() => { session.setDraft('financials', isSample ? SAMPLE_FINANCIALS : snapshot.financialsToml); setNotice('Draft discarded.'); }}>Discard changes</button>
-    </footer>
   </section>
   </div>;
 }

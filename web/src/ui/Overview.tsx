@@ -29,7 +29,10 @@ export function Overview() {
   return (
     <div className="page">
       <header className="page-head">
-        <h1>Overview</h1>
+        <div className="page-heading">
+          <h1>Overview</h1>
+          <p>Your budget, spending and total money at a glance.</p>
+        </div>
         <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); }} label="Month" />
       </header>
       <PreviewNotice isSample={isSample} />
