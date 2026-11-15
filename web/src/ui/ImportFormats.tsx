@@ -46,6 +46,7 @@ export function ImportFormatsSection() {
   const baseText = drafts.settings ?? originalText;
   const [form, setForm] = useState<Settings>(() => readSettings(baseText));
   const [customDateFormats, setCustomDateFormats] = useState<Record<number, boolean>>({});
+  const [openFormats, setOpenFormats] = useState<Record<number, boolean>>({ 0: true });
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // The text this form last wrote to the session draft. Anything else means an outside change (discard, reload).
@@ -105,15 +106,19 @@ export function ImportFormatsSection() {
   const patchFormat = (index: number, patch: Partial<ImportFormat>) =>
     update({ ...form, formats: form.formats.map((f, i) => (i === index ? { ...f, ...patch } : f)) });
 
-  const addFormat = () =>
+  const addFormat = () => {
+    const index = form.formats.length;
     update({
       ...form,
       formats: [...form.formats, { name: `Format ${form.formats.length + 1}`, dateColumn: '', amountColumn: '', descriptionColumn: '', delimiter: ',', decimalSeparator: '.', thousandsSeparator: '' }],
     });
+    setOpenFormats((prev) => ({ ...prev, [index]: true }));
+  };
 
   const removeFormat = (index: number) => {
     update({ ...form, formats: form.formats.filter((_, i) => i !== index) });
     setCustomDateFormats({});
+    setOpenFormats((prev) => Object.fromEntries(Object.entries(prev).filter(([i]) => Number(i) !== index).map(([i, v]) => [Number(i) > index ? Number(i) - 1 : i, v])));
   };
 
   return (
@@ -150,8 +155,25 @@ export function ImportFormatsSection() {
             descriptionOrReference: format.descriptionColumn?.trim() || format.referenceColumn?.trim() ? '' : 'Enter a description or reference column.',
           };
           const descriptionOrReferenceErrorId = `format-${index}-description-or-reference-error`;
+          const complete = !errors.name && !errors.dateColumn && !errors.amountColumn && !errors.descriptionOrReference;
           return (
-            <section className="format-card" key={index} aria-label={`Format ${index + 1}`}>
+            <details
+              className="format-card"
+              key={index}
+              aria-label={`Format ${index + 1}`}
+              open={openFormats[index] ?? false}
+              onToggle={(e) => {
+                const el = e.target as HTMLDetailsElement | null;
+                if (el) setOpenFormats((prev) => ({ ...prev, [index]: el.open }));
+              }}
+            >
+              <summary className="format-summary">
+                <span className="format-summary-title">{format.name.trim() || `Format ${index + 1}`}</span>
+                <span className="format-summary-meta">
+                  <span className={`format-summary-status ${complete ? 'is-done' : 'is-incomplete'}`}>{complete ? 'Complete' : 'Incomplete'}</span>
+                  <span className="format-chevron" aria-hidden="true">⌄</span>
+                </span>
+              </summary>
               <div className="settings-grid">
                 <label><span className="setting-label">Name<InfoButton label="Format name" text="A short name to identify this bank export format when importing a CSV." /></span>
                   <input value={format.name} aria-invalid={!format.name.trim()} aria-describedby={errors.name ? `format-${index}-name-error` : undefined} onChange={(e) => patchFormat(index, { name: e.target.value })} />
@@ -233,7 +255,7 @@ export function ImportFormatsSection() {
               <div className="format-actions">
                 <button type="button" onClick={() => removeFormat(index)}>Remove format</button>
               </div>
-            </section>
+            </details>
           );
         })}
         {form.formats.length > 0 && <div className="format-add"><button type="button" onClick={addFormat}>Add format</button></div>}

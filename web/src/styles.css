@@ -168,9 +168,9 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .page { display: flex; flex-direction: column; gap: 1rem; }
 .page-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
-.page-heading { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.page-heading { display: flex; flex-direction: column; gap: .05rem; min-width: 0; }
 .page-heading h1 { margin: 0; }
-.page-heading > p { max-width: 38rem; margin: .3rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.page-heading > p { max-width: 38rem; margin: .05rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
 .month-select { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 0.5rem; padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; }
 .month-select select { flex: 1 1 auto; padding: .4rem .5rem; border-radius: 7px; font-size: .82rem; font-weight: 700; }
 /* Unified selector look: every <select> matches the transaction-month selector. */
@@ -456,14 +456,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .info-tip p { position: fixed; z-index: 5; top: var(--tip-top, 12px); left: var(--tip-left, 12px); width: min(16rem, calc(100vw - 24px)); margin: 0; padding: .55rem .65rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); box-shadow: 0 4px 14px rgba(0, 0, 0, .14); font-size: .78rem; font-weight: 400; line-height: 1.4; }
 .settings-grid input[aria-invalid='true'] { border-color: var(--err); }
 .format-card { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.9rem; margin-top: 0.75rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+.format-summary { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; cursor: pointer; list-style: none; font-weight: 700; }
+.format-summary::-webkit-details-marker { display: none; }
+.format-summary .format-summary-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.format-summary .format-summary-meta { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.5rem; color: var(--muted); font-size: 0.75rem; font-weight: 650; }
+.format-summary .format-summary-status { padding: 0.15rem 0.55rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 0.68rem; }
+.format-summary .format-summary-status.is-done { color: var(--ok); border-color: var(--ok); }
+.format-summary .format-summary-status.is-incomplete { color: var(--neg); border-color: var(--neg); }
+.format-chevron { display: inline-block; transition: transform 0.15s ease; }
+.format-card[open] .format-chevron { transform: rotate(180deg); }
 .format-actions { display: flex; justify-content: flex-end; }
 .settings-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
 /* Settings: give preferences, imports, and account actions a clear hierarchy. */
 .settings-page { width: 100%; max-width: 1080px; margin-inline: auto; gap: 1.5rem; }
 .settings-page .page-head { align-items: flex-end; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
-.settings-heading { display: flex; flex-direction: column; gap: .2rem; }
-.settings-heading p { margin: .25rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.settings-heading { display: flex; flex-direction: column; gap: .05rem; }
+.settings-heading p { margin: .05rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
 .settings-page .section-tabs { flex: 0 0 auto; }
 .settings-page .card { padding: clamp(1rem, 2vw, 1.35rem); }
 .settings-page .card-title { margin-bottom: .9rem; }

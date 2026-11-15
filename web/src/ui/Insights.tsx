@@ -90,9 +90,9 @@ export function Insights() {
               <tfoot>
                 <tr>
                   <td>Average</td>
-                  <td className="num">{centsToDecimal(avg('budget'), round)} {cur}</td>
-                  <td className="num">{centsToDecimal(avg('spend'), round)} {cur}</td>
-                  <td className="num">{centsToDecimal(avg('left'), round)} {cur}</td>
+                  <td className="num">{centsToDecimal(avg('budget'), round)}{cur}</td>
+                  <td className="num">{centsToDecimal(avg('spend'), round)}{cur}</td>
+                  <td className="num">{centsToDecimal(avg('left'), round)}{cur}</td>
                   <td />
                 </tr>
               </tfoot>
@@ -152,7 +152,7 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
       {ticks.map((t) => (
         <g key={t}>
           <line x1={pad} x2={W - pad} y1={y(t)} y2={y(t)} className={t === 0 ? 'axis' : 'grid'} />
-          <text x={4} y={y(t) + 4} className="axis-label">{centsToDecimal(t, round)} {currency}</text>
+          <text x={4} y={y(t) + 4} className="axis-label">{centsToDecimal(t, round)}{currency}</text>
         </g>
       ))}
       {ticks.every((t) => t !== 0) && <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} className="axis" />}
@@ -165,9 +165,9 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
           )}
         </g>
       ))}
-      <text x={x(maxIdx) + pointDx(maxIdx)} y={y(maxVal) - 10} textAnchor={pointAnchor(maxIdx)} className="point-label">{centsToDecimal(maxVal, round)} {currency}</text>
+      <text x={x(maxIdx) + pointDx(maxIdx)} y={y(maxVal) - 10} textAnchor={pointAnchor(maxIdx)} className="point-label">{centsToDecimal(maxVal, round)}{currency}</text>
       {minIdx !== maxIdx && (
-        <text x={x(minIdx) + pointDx(minIdx)} y={y(minVal) + 20} textAnchor={pointAnchor(minIdx)} className="point-label">{centsToDecimal(minVal, round)} {currency}</text>
+        <text x={x(minIdx) + pointDx(minIdx)} y={y(minVal) + 20} textAnchor={pointAnchor(minIdx)} className="point-label">{centsToDecimal(minVal, round)}{currency}</text>
       )}
     </svg>
   );

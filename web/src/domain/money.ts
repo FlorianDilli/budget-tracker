@@ -63,5 +63,5 @@ export function centsToDecimal(cents: Cents, wholeUnits = false): string {
 }
 
 export function formatMoney(cents: Cents, currency = 'EUR', wholeUnits = false): string {
-  return `${centsToDecimal(cents, wholeUnits)} ${currency}`;
+  return `${centsToDecimal(cents, wholeUnits)}${currency}`;
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, fullMonthLabel, type YearMonth } from '../domain/dates';
-import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
+import { Card, Money, MonthSelect, PreviewNotice, currencyOf, lastDataMonth, txMonths } from './common';
 import { readCsv } from '../domain/csv';
 import type { ImportFormat } from '../domain/config';
 import { Link } from 'react-router-dom';
@@ -26,7 +26,9 @@ const FLAG_LABEL: Record<string, string> = {
 export function Transactions() {
   const { snapshot, settings, financials, isSample, previewImport, commitImport } = useSession();
   const now = useMemo(() => new Date(), []);
-  const months = useMemo(() => (snapshot ? dataMonths(snapshot, financials, now) : []), [snapshot, financials, now]);
+  // Only months with imported (CSV) transactions are suggested here —
+  // budget/recurring plan months are not transaction months.
+  const months = useMemo(() => (snapshot ? txMonths(snapshot) : []), [snapshot]);
   // Default to the most recent month that actually has transactions,
   // not the current (often empty) month.
   const initialMonth = useMemo<YearMonth>(() => (snapshot ? lastDataMonth(snapshot, now) : ''), [snapshot, now]);
@@ -36,6 +38,11 @@ export function Transactions() {
   useEffect(() => {
     if (!userPickedMonth.current && snapshot && initialMonth) setYm(initialMonth);
   }, [snapshot, initialMonth]);
+  // Keep the selected month inside the actual transaction months
+  // (e.g. after an import or a month deletion).
+  useEffect(() => {
+    if (months.length && !months.includes(ym)) setYm(months[months.length - 1]);
+  }, [months, ym]);
   const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'transactions');
   const [selected, setSelected] = useState<string | null>(null);
   if (!snapshot) return null;

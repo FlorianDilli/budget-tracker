@@ -49,7 +49,7 @@ export function CashFlow({ plan, currency, month }: { plan: PlanLine[]; currency
     return `M ${x0} ${y0} C ${mid} ${y0}, ${mid} ${y1}, ${x1} ${y1} L ${x1} ${y1 + h} C ${mid} ${y1 + h}, ${mid} ${y0 + h}, ${x0} ${y0 + h} Z`;
   };
   const label = (name: string) => name.length > 22 ? `${name.slice(0, 21)}…` : name;
-  const amount = (cents: number) => `${centsToDecimal(cents, round)} ${currency}`;
+  const amount = (cents: number) => `${centsToDecimal(cents, round)}${currency}`;
 
   return <Card title={`Cashflow Sankey (${monthLabel(month)})`}>
     <p className="muted small">{expense > income ? 'Income and deficit → total outflow → expenses' : 'Income → total income → expenses and surplus'}. Monthly plan; deficit is not assumed to be funded.</p>

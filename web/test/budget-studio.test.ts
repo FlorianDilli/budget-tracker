@@ -84,28 +84,43 @@ afterEach(async () => {
 });
 
 describe('native budget studio', () => {
-  it('previews a valid editor draft without changing shared data until saved', async () => {
-    await render();
-    await edit(draft);
-    expect(setDraft).toHaveBeenCalledWith('financials', draft);
-    expect(container.querySelector('.budget-inspector')?.textContent).toContain('Draft salary');
-    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250.00 USD');
-    expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Saved rent');
-    expect(container.querySelector('.studio-status')).toBeNull();
-    expect(container.textContent).not.toContain('Unsaved preview');
-    expect(button('Save').disabled).toBe(false);
+  it('autosaves a valid editor draft without a manual save button', async () => {
+    vi.useFakeTimers();
+    try {
+      await render();
+      await edit(draft);
+      expect(setDraft).toHaveBeenCalledWith('financials', draft);
+      expect(container.querySelector('.budget-inspector')?.textContent).toContain('Draft salary');
+      expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250.00USD');
+      expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Saved rent');
+      expect(container.querySelector('.studio-status')).toBeNull();
+      expect(container.textContent).not.toContain('Unsaved preview');
+      expect(Array.from(container.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Save')).toBe(false);
 
-    await click(button('Save'));
-    expect(saveFinancials).toHaveBeenCalledOnce();
-    expect(saveFinancials).toHaveBeenCalledWith(draft);
-    expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Draft salary');
-    expect(container.querySelector('[role=status]')?.textContent).toContain('Saved to encrypted storage.');
-    expect(button('Save').disabled).toBe(true);
+      await act(async () => { vi.advanceTimersByTime(800); });
+      expect(saveFinancials).toHaveBeenCalledWith(draft);
+      expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Draft salary');
+      expect(container.querySelector('[role=status]')?.textContent).toContain('Saved automatically.');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
-  it('applies round_amounts and number-space-currency format in the visual budget', async () => {
+  it('does not autosave an invalid draft, and the untouched sample is left alone', async () => {
+    vi.useFakeTimers();
+    try {
+      await render(invalid);
+      expect(container.querySelector('[role=alert]')?.textContent).toContain('Broken');
+      await act(async () => { vi.advanceTimersByTime(2000); });
+      expect(saveFinancials).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('applies round_amounts and no-space-currency format in the visual budget', async () => {
     await render(draft, false, { roundAmounts: true });
-    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250 USD');
+    expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250USD');
     expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('250.00');
     expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('$250');
   });
@@ -117,19 +132,19 @@ describe('native budget studio', () => {
     expect(container.textContent).not.toContain('Unsaved preview');
     expect(container.querySelector('[aria-label="Open TOML file"]')).toBeNull();
     expect(container.querySelector('[aria-label="Download TOML file"]')).toBeNull();
-    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('SaveDiscard changesClearCopyUndoRedoSearch');
+    expect(container.querySelector('.studio-editor-actions')?.textContent).toContain('Budget is saved automatically.Discard changesClearCopyUndoRedoSearch');
     expect(container.querySelector('.studio-editor-actions button')?.textContent).not.toBe('Wrap');
-    expect(container.querySelector('.studio-editor-actions .primary')?.textContent).toBe('Save');
+    expect(container.querySelector('.studio-editor-actions .primary')).toBeNull();
     expect(container.querySelector('.studio-footer')).toBeNull();
   });
 
-  it('shows the saved budget and disables save and source navigation for an invalid draft', async () => {
+  it('shows the saved budget and disables source navigation for an invalid draft', async () => {
     await render(invalid);
     expect(container.querySelector('[role=status]')?.textContent).toContain('Invalid draft. Showing the saved budget.');
     expect(container.querySelector('[role=alert]')?.textContent).toContain('Broken');
     expect(container.querySelector('.budget-inspector')?.textContent).toContain('Saved rent');
     expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('Broken');
-    expect(button('Save').disabled).toBe(true);
+    expect(Array.from(container.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Save')).toBe(false);
     expect(container.querySelector<HTMLButtonElement>('.bi-row')?.disabled).toBe(true);
     await click(button('Jump to line'));
     expect(mocks.jump).toHaveBeenCalledWith(1);

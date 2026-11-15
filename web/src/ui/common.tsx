@@ -9,7 +9,7 @@ export function Money({ cents, currency, className, round }: { cents: Cents; cur
   const session = useContext(SessionContext);
   const whole = round ?? session?.settings?.roundAmounts ?? false;
   const cls = [className, cents < 0 ? 'neg' : cents > 0 ? 'pos' : ''].filter(Boolean).join(' ');
-  return <span className={cls}>{`${centsToDecimal(cents, whole)} ${currency}`}</span>;
+  return <span className={cls}>{`${centsToDecimal(cents, whole)}${currency}`}</span>;
 }
 
 export function Card({ title, children, wide, info }: { title?: string; children: ReactNode; wide?: boolean; info?: string }) {
@@ -73,6 +73,11 @@ export function lastDataMonth(snapshot: Snapshot, now: Date): YearMonth {
     (latest, t) => (t.date.slice(0, 7) > latest ? t.date.slice(0, 7) : latest),
     snapshot.transactions[0].date.slice(0, 7),
   );
+}
+
+/** Sorted months that actually have imported (CSV) transactions. */
+export function txMonths(snapshot: Snapshot): YearMonth[] {
+  return [...new Set(snapshot.transactions.map((t) => t.date.slice(0, 7)))].sort();
 }
 
 /** Months covered by the data, from the earliest known month to the latest, always including the current month. */

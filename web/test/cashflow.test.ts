@@ -33,18 +33,18 @@ category = "Home"
 amount = -50
 `);
     const summary = doc.querySelector('.sankey-summary')!.textContent!;
-    expect(summary).toContain('Work: 1200.00 $');
-    expect(summary).toContain('Home: -100.00 $');
-    expect(summary).toContain('General: -50.00 $');
-    expect(summary).toContain('Surplus (budget): 1050.00 $');
+    expect(summary).toContain('Work: 1200.00$');
+    expect(summary).toContain('Home: -100.00$');
+    expect(summary).toContain('General: -50.00$');
+    expect(summary).toContain('Surplus (budget): 1050.00$');
     expect(doc.querySelectorAll('.sankey-ribbon')).toHaveLength(4);
     expect(doc.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('shows unfunded deficit, including when there is no income', () => {
     const doc = render('[[recurring_transactions]]\namount = -25\ncategory = "Food"');
-    expect(doc.querySelector('.sankey-summary')?.textContent).toContain('Deficit (unfunded): -25.00 $');
-    expect(doc.querySelector('.sankey-summary')?.textContent).toContain('Food: -25.00 $');
+    expect(doc.querySelector('.sankey-summary')?.textContent).toContain('Deficit (unfunded): -25.00$');
+    expect(doc.querySelector('.sankey-summary')?.textContent).toContain('Food: -25.00$');
     expect(doc.querySelector('svg')?.textContent).toContain('Total outflow');
     expect(doc.querySelector('svg')?.outerHTML).not.toMatch(/NaN|Infinity/);
   });
@@ -57,7 +57,7 @@ amount = -50
 
   it('handles income only and balanced plans without artificial nodes', () => {
     const income = render('[[recurring_transactions]]\namount = 10');
-    expect(income.querySelector('.sankey-summary')?.textContent).toContain('Surplus (budget): 10.00 $');
+    expect(income.querySelector('.sankey-summary')?.textContent).toContain('Surplus (budget): 10.00$');
     const balanced = render('[[recurring_transactions]]\namount = 10\n[[recurring_transactions]]\namount = -10');
     expect(balanced.querySelector('.sankey-summary')?.textContent).not.toMatch(/Surplus|Deficit/);
   });

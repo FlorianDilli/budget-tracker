@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from 'react';
 import { parseFinancials } from '../domain/config';
 import { SAMPLE_FINANCIALS } from '../domain/sample';
-import { useSession } from '../state/session';
+import { useSession, type SaveResult } from '../state/session';
 import { BudgetInspector } from './BudgetInspector';
 import { TomlEditor, type TomlEditorHandle } from './TomlEditor';
 import { SectionTabs, useSectionParam, type SectionItem } from './SectionTabs';
@@ -34,22 +34,35 @@ export function BudgetPage() {
   const dirty = draft !== (snapshot?.financialsToml ?? '');
   const display = parsed.ok ? parsed.value : financials;
   const issue = parsed.ok ? null : parsed.issues[0];
+  const saveFinancialsRef = useRef(session.saveFinancials);
+  saveFinancialsRef.current = session.saveFinancials;
+  // The draft text when this page first rendered. Autosave only kicks in
+  // after the user actually changes the draft, so the untouched sample
+  // (or saved text) is never written back without an edit.
+  const initialDraft = useRef(draft);
 
   useEffect(() => { if (jump && view !== 'budget') editor.current?.jumpToLine(jump.line); }, [jump, view]);
   if (!snapshot) return null;
 
-  const save = async () => {
+  // Autosave: no manual Save button. Debounced so typing does not spam writes.
+  useEffect(() => {
+    if (!dirty || !parsed.ok || draft === initialDraft.current) return;
     setSaving(true);
-    setNotice('');
-    try {
-      const result = await session.saveFinancials(draft);
-      setNotice(result.ok ? 'Saved to encrypted storage.' : 'Not saved. Fix the errors first.');
-    } catch (error) {
-      setNotice(`Not saved: ${error instanceof Error ? error.message : String(error)}`);
-    } finally {
-      setSaving(false);
-    }
-  };
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const result: SaveResult = await saveFinancialsRef.current(draft);
+          setNotice(result.ok ? 'Saved automatically.' : 'Not saved. Fix the errors first.');
+        } catch (error) {
+          setNotice(`Not saved: ${error instanceof Error ? error.message : String(error)}`);
+        } finally {
+          setSaving(false);
+        }
+      })();
+    }, 800);
+    return () => window.clearTimeout(timer);
+  }, [draft, dirty, parsed.ok]);
+
   const load = async (file: File) => {
     try {
       session.setDraft('financials', await file.text());
@@ -63,10 +76,10 @@ export function BudgetPage() {
     const file = event.dataTransfer.files?.[0];
     if (file) void load(file);
   };
-  const discard = () => { session.setDraft('financials', isSample ? SAMPLE_FINANCIALS : snapshot.financialsToml); setNotice('Draft discarded.'); };
-  const saveDiscard = (
+  const discard = () => { session.setDraft('financials', isSample ? SAMPLE_FINANCIALS : snapshot.financialsToml); setNotice('Draft reset to saved budget.'); };
+  const actions = (
     <>
-      <button type="button" className="primary" disabled={!dirty || !parsed.ok || saving} onClick={() => void save()}>{saving ? 'Saving' : 'Save'}</button>
+      <span className="muted small" role="status">{saving ? 'Saving…' : notice || (dirty && !parsed.ok ? 'Fix the errors above to save.' : 'Budget is saved automatically.')}</span>
       <button type="button" disabled={!dirty || saving} onClick={discard}>Discard changes</button>
     </>
   );
@@ -80,11 +93,11 @@ export function BudgetPage() {
     </header>
     <PreviewNotice isSample={isSample} />
   <section className={`budget-studio${view === 'budget' ? ' is-budget' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} aria-label="Budget studio">
-    {(!parsed.ok || notice || legacyDraft !== null) && <div className="studio-status" role="status">{!parsed.ok && 'Invalid draft. Showing the saved budget.'}{notice && ` ${notice}`}<span className="studio-status-actions">{legacyDraft !== null && <button type="button" onClick={() => { if (window.confirm('Replace this draft with the previous standalone Budget draft? It remains stored separately in plaintext until you remove it from browser storage.')) { session.setDraft('financials', legacyDraft); setView('editor'); setNotice('Previous standalone draft loaded. Save to encrypt and apply it.'); } }}>Recover old draft</button>}</span></div>}
+    {(!parsed.ok || legacyDraft !== null) && <div className="studio-status" role="status">{!parsed.ok && 'Invalid draft. Showing the saved budget.'}<span className="studio-status-actions">{legacyDraft !== null && <button type="button" onClick={() => { if (window.confirm('Replace this draft with the previous standalone Budget draft? It remains stored separately in plaintext until you remove it from browser storage.')) { session.setDraft('financials', legacyDraft); setView('editor'); setNotice('Previous standalone draft loaded; it will be saved automatically.'); } }}>Recover old draft</button>}</span></div>}
     <div className={`studio-panels studio-${view}`}>
       <div className="studio-editor" hidden={view === 'budget'}>
         <div className="studio-editor-actions" role="group" aria-label="Editor actions">
-          {saveDiscard}
+          {actions}
           <button type="button" onClick={() => session.setDraft('financials', '')}>Clear</button>
           <button type="button" onClick={() => void navigator.clipboard?.writeText(draft)}>Copy</button>
           <button type="button" onClick={() => editor.current?.undo()}>Undo</button>
@@ -97,7 +110,7 @@ export function BudgetPage() {
       <div className="studio-inspector" hidden={view === 'editor'}>
         {view === 'budget' && (
           <div className="studio-budget-actions" role="group" aria-label="Budget actions">
-            {saveDiscard}
+            {actions}
           </div>
         )}
         <BudgetInspector financials={display} onSourceLineClick={parsed.ok ? (line) => { setView(view === 'split' ? 'split' : 'editor'); setJump({ line }); } : undefined} />

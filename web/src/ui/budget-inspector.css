@@ -22,9 +22,11 @@
 }
 .budget-inspector * { box-sizing: border-box; }
 .budget-inspector button, .budget-inspector select { font: inherit; }
-.bi-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; }
-.bi-toolbar select { min-width: 0; height: 34px; padding: .45rem .65rem; border: 1px solid var(--bi-border); border-radius: 10px; background: var(--bi-surface); color: var(--bi-text); font-family: var(--bi-mono); font-size: .78rem; font-weight: 700; text-align: center; cursor: pointer; }
-.bi-toolbar select:first-child { margin-right: auto; }
+.bi-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 14px; }
+/* Same selector look as Overview's MonthSelect. */
+.bi-toolbar .month-select { flex: 0 0 auto; gap: 0.5rem; padding: .45rem .65rem; border: 1px solid var(--bi-border); border-radius: 10px; background: var(--bi-surface); font-size: .82rem; font-weight: 700; }
+.bi-toolbar .month-select select { height: auto; padding: .4rem .5rem; border-radius: 7px; font-size: .82rem; font-weight: 700; text-align: left; }
+.bi-toolbar .month-select:first-child { margin-right: auto; }
 .bi-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
 .bi-card { background: var(--bi-surface); border: 1px solid var(--bi-border); border-radius: 10px; box-shadow: 0 1px 3px #0000000a; }
 .bi-months { padding: 10px 12px; }
@@ -109,7 +111,7 @@
 @container (min-width: 680px) { .bi-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } }
 @container (min-width: 820px) { .bi-transactions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
 @container (min-width: 900px) { .bi-month-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
-@container (max-width: 620px) { .bi-toolbar { display: grid; grid-template-columns: 1fr 1.25fr 1fr; } .bi-toolbar select { width: 100%; padding: 0 4px; font-size: .75rem; } }
+@container (max-width: 620px) { .bi-toolbar { display: grid; grid-template-columns: 1fr 1.25fr 1fr; } .bi-toolbar .month-select { padding: .45rem .5rem; font-size: .78rem; } .bi-toolbar .month-select select { width: 100%; min-width: 0; padding: .4rem .35rem; font-size: .75rem; } }
 .dark .budget-inspector { --bi-bg: #0d0f0d; --bi-surface: #141714; --bi-subtle: #191d19; --bi-border: #252b25; --bi-text: #eff2ec; --bi-muted: #959e91; --bi-faint: #6f776a; --bi-green: #86efac; --bi-red: #fca5a5; --bi-amber: #fbbf24; }
 .dark .bi-month { background: #1e241e; }
 .dark .bi-month.active { background: #b4f74d; color: #0e130a; }
