@@ -78,20 +78,6 @@ it('edits settings through the form and saves valid generated TOML', async () =>
   }
 });
 
-it('blocks saving while a required import column is empty', async () => {
-  await render();
-  await typeInto(field('Date column'), '   ');
-  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-  expect(saveSettings).not.toHaveBeenCalled();
-  expect(field('Date column').closest('label')?.querySelector('.field-error')?.textContent).toBe('Date column is required.');
-  expect(container.querySelector('[role=alert]')).toBeNull();
-  await typeInto(field('Date column'), 'Booking Date');
-  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-  expect(field('Date column').closest('label')?.querySelector('.field-error')).toBeNull();
-  // Reverting to the saved value means there is nothing new to save.
-  expect(saveSettings).not.toHaveBeenCalled();
-});
-
 it('auto-saves settings without a manual Save button', async () => {
   await render();
   await typeInto(field('Currency symbol'), 'GBP');
@@ -102,55 +88,4 @@ it('auto-saves settings without a manual Save button', async () => {
   expect(parsed.ok).toBe(true);
   if (parsed.ok) expect(parsed.value.currencySymbol).toBe('GBP');
   expect(container.textContent).toContain('Saved automatically.');
-});
-
-it('lets an opening balance be edited as natural decimal text', async () => {
-  await render();
-  const balance = field('Balance');
-  expect(balance.type).toBe('text');
-  expect(balance.inputMode).toBe('decimal');
-
-  await typeInto(balance, '123.');
-  expect(balance.value).toBe('123.');
-  await act(async () => balance.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
-  expect(balance.value).toBe('123.00');
-  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-
-  const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
-  expect(parsed.ok).toBe(true);
-  if (parsed.ok) expect(parsed.value.formats[0].balanceSnapshot).toBe(12300);
-});
-
-it('offers human-readable date formats and saves the selected pattern', async () => {
-  await render();
-  const dateFormat = field('Date format') as HTMLSelectElement;
-  expect(Array.from(dateFormat.options).map((option) => option.textContent)).toContain('Day/month/year (17/03/2025)');
-  expect(Array.from(dateFormat.options).map((option) => option.textContent)).toContain('Year.month.day (2025.03.17)');
-
-  await act(async () => {
-    dateFormat.value = '%Y.%m.%d';
-    dateFormat.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-
-  const parsed = parseSettings(saveSettings.mock.calls[0][0] as string);
-  expect(parsed.ok).toBe(true);
-  if (parsed.ok) expect(parsed.value.formats[0].dateFormat).toBe('%Y.%m.%d');
-});
-
-it('adds an import format and reports the missing columns until it is complete', async () => {
-  await render();
-  expect(container.querySelectorAll('.format-card')).toHaveLength(1);
-  await act(async () => button('Add format').click());
-  await act(async () => { await new Promise((r) => setTimeout(r, 500)); });
-  expect(container.querySelectorAll('.format-card')).toHaveLength(2);
-  expect(saveSettings).not.toHaveBeenCalled();
-  const newFormat = container.querySelectorAll<HTMLElement>('.format-card')[1];
-  expect(container.querySelector('[role=alert]')).toBeNull();
-  expect(newFormat.querySelectorAll('.field-error')).toHaveLength(3);
-  expect(newFormat.querySelector('#format-1-date-column-error')?.textContent).toBe('Date column is required.');
-  expect(newFormat.querySelector('#format-1-amount-column-error')?.textContent).toBe('Amount column is required.');
-  expect(newFormat.querySelector('#format-1-description-or-reference-error')?.textContent).toBe('Enter a description or reference column.');
-  expect(newFormat.querySelector('input[aria-describedby="format-1-date-column-error"]')).not.toBeNull();
-  expect(newFormat.querySelectorAll(`input[aria-describedby="format-1-description-or-reference-error"]`)).toHaveLength(2);
 });

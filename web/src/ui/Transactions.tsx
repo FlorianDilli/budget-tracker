@@ -2,10 +2,20 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, fullMonthLabel, type YearMonth } from '../domain/dates';
-import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths } from './common';
+import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
 import { readCsv } from '../domain/csv';
 import type { ImportFormat } from '../domain/config';
 import { Link } from 'react-router-dom';
+import { SectionTabs, useSectionParam, type SectionItem } from './SectionTabs';
+import { ImportFormatsSection } from './ImportFormats';
+
+const TABS = ['transactions', 'import', 'formats'] as const;
+type Tab = (typeof TABS)[number];
+const TAB_ITEMS = [
+  { id: 'transactions', label: 'Transactions' },
+  { id: 'import', label: 'Import' },
+  { id: 'formats', label: 'Formats' },
+] as const satisfies readonly SectionItem<Tab>[];
 
 const FLAG_LABEL: Record<string, string> = {
   VERIFIED: 'verified',
@@ -19,16 +29,14 @@ export function Transactions() {
   const months = useMemo(() => (snapshot ? dataMonths(snapshot, financials, now) : []), [snapshot, financials, now]);
   // Default to the most recent month that actually has transactions,
   // not the current (often empty) month.
-  const lastDataMonth = useMemo<YearMonth>(() => {
-    if (!snapshot || snapshot.transactions.length === 0) return currentMonth(now);
-    return snapshot.transactions.reduce((latest, t) => (t.date.slice(0, 7) > latest ? t.date.slice(0, 7) : latest), snapshot.transactions[0].date.slice(0, 7));
-  }, [snapshot, now]);
-  const [ym, setYm] = useState<YearMonth>(() => lastDataMonth);
+  const initialMonth = useMemo<YearMonth>(() => (snapshot ? lastDataMonth(snapshot, now) : ''), [snapshot, now]);
+  const [ym, setYm] = useState<YearMonth>(() => initialMonth);
   const userPickedMonth = useRef(false);
   // Snapshot may only arrive after first render (unlock); follow it until the user picks a month.
   useEffect(() => {
-    if (!userPickedMonth.current && snapshot) setYm(lastDataMonth);
-  }, [snapshot, lastDataMonth]);
+    if (!userPickedMonth.current && snapshot && initialMonth) setYm(initialMonth);
+  }, [snapshot, initialMonth]);
+  const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'transactions');
   const [selected, setSelected] = useState<string | null>(null);
   if (!snapshot) return null;
   const hasTransactions = snapshot.transactions.length > 0;
@@ -42,22 +50,27 @@ export function Transactions() {
         <div className="transactions-heading">
           <span className="transactions-eyebrow">Your activity</span>
           <h1>Transactions</h1>
-          <p>Add bank CSVs to build and update your transaction history.</p>
+          <p>{tab === 'formats' ? 'Describe how your bank CSV exports are read.' : tab === 'import' ? 'Add bank CSVs to build and update your transaction history.' : 'Review your imported transactions.'}</p>
         </div>
-        {hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />}
+        <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Transactions sections" />
+        {tab === 'transactions' && hasTransactions && <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />}
       </header>
       {hasTransactions && <PreviewNotice isSample={isSample} />}
 
-      <ImportPanel
-        formats={settings.formats}
-        onPreview={previewImport}
-        onCommit={commitImport}
-      />
+      {tab === 'import' && (
+        <ImportPanel
+          formats={settings.formats}
+          onPreview={previewImport}
+          onCommit={commitImport}
+        />
+      )}
 
-      {hasTransactions && <Card title={fullMonthLabel(ym)} wide>
+      {tab === 'formats' && <ImportFormatsSection />}
+
+      {tab === 'transactions' && hasTransactions && <Card title={fullMonthLabel(ym)} wide>
         {a.txs.length === 0 ? <div className="transactions-empty">
           <span className="transactions-empty-mark" aria-hidden="true">—</span>
-          <div><h3>No transactions this month</h3><p>Choose a bank CSV above to add activity for this month.</p></div>
+          <div><h3>No transactions this month</h3><p>Import a bank CSV in the Import tab to add activity for this month.</p></div>
         </div> : (
           <table className="tx-table">
             <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Flags</th><th className="num">Amount</th></tr></thead>
@@ -76,7 +89,7 @@ export function Transactions() {
         )}
       </Card>}
 
-      {selectedTx && (
+      {tab === 'transactions' && selectedTx && (
         <Card title="Detail" wide>
           <dl className="detail">
             <dt>Date</dt><dd>{selectedTx.tx.date}</dd>
@@ -89,7 +102,28 @@ export function Transactions() {
           </dl>
         </Card>
       )}
+
+      {tab === 'transactions' && hasTransactions && <DeleteMonthCard months={months} />}
     </div>
+  );
+}
+
+function DeleteMonthCard({ months }: { months: YearMonth[] }) {
+  const { deleteMonth } = useSession();
+  const [ym, setYm] = useState<YearMonth>(months[months.length - 1] ?? currentMonth(new Date()));
+  const [msg, setMsg] = useState<string | null>(null);
+  const run = async () => {
+    if (!window.confirm(`Delete all imported transactions in ${ym}? Recurring entries are kept.`)) return;
+    const n = await deleteMonth(ym);
+    setMsg(`Deleted ${n} transaction(s) for ${ym}.`);
+  };
+  return (
+    <Card title="Delete a month" wide info="Permanently removes imported transactions for the selected month. Recurring entries and settings are not changed.">
+      <p className="muted">Removes imported transactions for one month. Settings and financials are unchanged.</p>
+      <MonthSelect months={months} value={ym} onChange={setYm} label="Month" />
+      <button className="danger" onClick={run}>Delete transactions</button>
+      {msg && <p className="ok">{msg}</p>}
+    </Card>
   );
 }
 
@@ -144,7 +178,7 @@ function ImportPanel({
     setSource(null);
     setMapping(null);
     if (!formats.length) {
-      setError('Define an importer format in Settings → settings.toml first.');
+      setError('Define an importer format first (Formats tab on this page).');
       return;
     }
     if (file.size > 10_000_000) return setError('File is larger than 10 MB');
@@ -165,7 +199,7 @@ function ImportPanel({
           <p>Upload a bank CSV and its transactions will be added automatically. Duplicates are skipped.</p>
           {formats.length > 0
             ? <p className="import-formats"><strong>Configured formats:</strong> {formats.map((format) => format.name).join(', ')}</p>
-            : <p className="import-setup-note">Before importing, <Link to="/settings">set up a bank CSV format in Settings</Link>.</p>}
+            : <p className="import-setup-note">Before importing, <Link to="/transactions?tab=formats">set up a bank CSV format</Link>.</p>}
         </div>
         <span className="import-format-mark" aria-hidden="true">CSV</span>
       </div>

@@ -1,15 +1,23 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSession } from '../state/session';
 import { analyzeMonth, topSpending } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
-import { currentMonth, type YearMonth } from '../domain/dates';
-import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths } from './common';
+import type { YearMonth } from '../domain/dates';
+import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
 
 export function Overview() {
   const { snapshot, settings, financials, isSample } = useSession();
   const now = useMemo(() => new Date(), []);
   const months = useMemo(() => (snapshot ? dataMonths(snapshot, financials, now) : []), [snapshot, financials, now]);
-  const [ym, setYm] = useState<YearMonth>(() => currentMonth(now));
+  // Default to the most recent month that actually has transactions,
+  // not the current (often empty) month.
+  const initialMonth = useMemo<YearMonth>(() => (snapshot ? lastDataMonth(snapshot, now) : ''), [snapshot, now]);
+  const [ym, setYm] = useState<YearMonth>(() => initialMonth);
+  const userPickedMonth = useRef(false);
+  // Snapshot may only arrive after first render (unlock); follow it until the user picks a month.
+  useEffect(() => {
+    if (!userPickedMonth.current && snapshot && initialMonth) setYm(initialMonth);
+  }, [snapshot, initialMonth]);
   if (!snapshot) return null;
   const cur = currencyOf(settings);
 
@@ -22,11 +30,11 @@ export function Overview() {
     <div className="page">
       <header className="page-head">
         <h1>Overview</h1>
-        <MonthSelect months={months} value={ym} onChange={setYm} label="Month" />
+        <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); }} label="Month" />
       </header>
       <PreviewNotice isSample={isSample} />
 
-      {empty && <p className="hint">No data yet. Add recurring entries in Settings and import a CSV in Transactions.</p>}
+      {empty && <p className="hint">No data yet. Add recurring entries in Budget and import a CSV in Transactions.</p>}
 
       <div className="kpis">
         <Kpi label="Available to spend" value={<Money cents={a.leftCents} currency={cur} />} />

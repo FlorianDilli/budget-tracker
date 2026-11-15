@@ -66,6 +66,15 @@ export function InfoButton({ label, text }: { label: string; text: string }) {
   );
 }
 
+/** Most recent month that actually has transactions; the current month when there are none. */
+export function lastDataMonth(snapshot: Snapshot, now: Date): YearMonth {
+  if (snapshot.transactions.length === 0) return currentMonth(now);
+  return snapshot.transactions.reduce(
+    (latest, t) => (t.date.slice(0, 7) > latest ? t.date.slice(0, 7) : latest),
+    snapshot.transactions[0].date.slice(0, 7),
+  );
+}
+
 /** Months covered by the data, from the earliest known month to the latest, always including the current month. */
 export function dataMonths(snapshot: Snapshot, financials: Financials, now: Date): YearMonth[] {
   const cur = currentMonth(now);

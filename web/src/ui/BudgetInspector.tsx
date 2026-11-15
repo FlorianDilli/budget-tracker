@@ -21,16 +21,31 @@ export interface BudgetInspectorProps {
   onSourceLineClick?: (line: number) => void;
 }
 
+/** Most recent month (going backwards from now) with at least one active plan line. */
+function lastPlanMonth(financials: Financials, today: Date): { year: number; month: number } {
+  let year = today.getFullYear();
+  let month = today.getMonth() + 1;
+  for (let i = 0; i < 120; i++) {
+    if (planForMonth(financials, ymOf(year, month)).some((line) => line.active)) return { year, month };
+    month--;
+    if (month === 0) { month = 12; year--; }
+  }
+  return { year: today.getFullYear(), month: today.getMonth() + 1 };
+}
+
 export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspectorProps) {
   const { settings } = useSession();
   const [today] = useState(() => new Date());
   const dark = prefersDark();
   const palette = dark ? darkColors : colors;
   const incomeColor = dark ? '#4ade80' : '#16a34a';
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
+  // Default to the most recent month that actually has a plan,
+  // not the current (often empty) month.
+  const [initial] = useState(() => lastPlanMonth(financials, today));
+  const [year, setYear] = useState(initial.year);
+  const [month, setMonth] = useState(initial.month);
   const [sort, setSort] = useState<'amount' | 'category'>('amount');
-  const [currency, setCurrency] = useState(() => settings.currencySymbol || 'EUR');
+  const currency = settings.currencySymbol || 'EUR';
   const years = new Set([today.getFullYear(), year]);
   for (const entry of financials.recurring) {
     for (const date of [entry.start, entry.end, ...entry.history.map((h) => h.from)]) if (date) years.add(Number(date.slice(0, 4)));
@@ -82,7 +97,6 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
     <div className="bi-toolbar">
       <select aria-label="Year" value={year} onChange={(event) => setYear(Number(event.target.value))}>{[...years].sort((a, b) => a - b).map((y) => <option key={y}>{y}</option>)}</select>
       <select aria-label="Sort transactions" value={sort} onChange={(event) => setSort(event.target.value as 'amount' | 'category')}><option value="amount">↕ Amount</option><option value="category">↕ Category</option></select>
-      <select aria-label="Display currency label (no conversion)" title="Changes the label only; amounts are not converted" value={currency} onChange={(event) => setCurrency(event.target.value)}>{![ 'USD', 'EUR', 'GBP', 'CHF'].includes(currency) && <option value={currency}>{currency}</option>}<option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="CHF">CHF</option></select>
     </div>
     <div className="bi-body">
       <div className="bi-card bi-months"><div className="bi-card-head"><span>{year} Monthly Overview</span><span>Select month to inspect</span></div><div className="bi-month-grid">{months.map((label, i) => <button type="button" key={label} aria-pressed={month === i + 1} className={`bi-month ${month === i + 1 ? 'active' : ''} ${year === today.getFullYear() && i === today.getMonth() ? 'current' : ''}`} onClick={() => setMonth(i + 1)}><span>{label}</span><small className={sum(plans[i]) < 0 ? 'bi-negative' : 'bi-positive'}>{signed(sum(plans[i]))}</small></button>)}</div></div>

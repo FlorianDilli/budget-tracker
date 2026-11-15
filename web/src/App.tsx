@@ -25,9 +25,9 @@ function Gate() {
 
 const NAV = [
   { to: '/', label: 'Overview', icon: 'overview' },
-  { to: '/transactions', label: 'Transactions', icon: 'transactions' },
-  { to: '/insights', label: 'Insights', icon: 'insights' },
   { to: '/budget', label: 'Budget', icon: 'budget' },
+  { to: '/insights', label: 'Insights', icon: 'insights' },
+  { to: '/transactions', label: 'Transactions', icon: 'transactions' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ];
 
@@ -58,9 +58,9 @@ function Shell() {
         )}
         <Routes>
           <Route path="/" element={<Overview />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/insights" element={<Insights />} />
           <Route path="/budget" element={<BudgetPage />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/transactions" element={<Transactions />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

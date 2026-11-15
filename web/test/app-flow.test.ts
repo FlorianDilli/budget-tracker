@@ -152,16 +152,17 @@ describe('app security and navigation flow', () => {
     expect(transactions).toBeDefined();
     await click(transactions!);
     expect(container.querySelector('h1')?.textContent).toBe('Transactions');
+    expect(container.querySelector('.import-panel')).toBeNull();
+    expect(container.querySelector('.month-select')).toBeNull();
+    expect(container.querySelector('.transactions-empty')).toBeNull();
+    expect(container.querySelector('.tx-table')).toBeNull();
+    await click(button('Import'));
     expect(container.textContent).toContain('Upload a bank CSV and its transactions will be added automatically.');
     expect(container.textContent).not.toContain('Review rows');
     expect(container.textContent).not.toContain('Import safely');
     expect(container.querySelector('.import-panel')).not.toBeNull();
-    expect(container.querySelectorAll('.card')).toHaveLength(1);
-    expect(container.querySelector('.month-select')).toBeNull();
-    expect(container.querySelector('.transactions-empty')).toBeNull();
-    expect(container.querySelector('.tx-table')).toBeNull();
-    expect(container.textContent).toContain('Before importing, set up a bank CSV format in Settings.');
-    expect(Array.from(container.querySelectorAll('a[href="/settings"]')).some((link) => link.textContent === 'set up a bank CSV format in Settings')).toBe(true);
+    expect(container.textContent).toContain('Before importing, set up a bank CSV format.');
+    expect(Array.from(container.querySelectorAll('a[href="/transactions?tab=formats"]')).some((link) => link.textContent === 'set up a bank CSV format')).toBe(true);
     expect(container.querySelector<HTMLInputElement>('input[type=file]')?.disabled).toBe(true);
 
     await click(button('Lock'));
@@ -181,6 +182,7 @@ describe('app security and navigation flow', () => {
     await waitFor(() => container.querySelector('nav[aria-label=Main]') !== null);
     expect(container.textContent).toContain('Preview data is being shown');
     expect(container.querySelectorAll('.nav-icon')).toHaveLength(5);
+    expect(Array.from(container.querySelectorAll('nav[aria-label=Main] a')).map((a) => a.textContent?.trim())).toEqual(['Overview', 'Budget', 'Insights', 'Transactions', 'Settings']);
     const settingsLink = Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Settings'))!;
     await click(settingsLink);
     expect(container.querySelectorAll('.sample-notice')).toHaveLength(1);
