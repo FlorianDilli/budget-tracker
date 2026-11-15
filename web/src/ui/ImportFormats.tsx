@@ -46,7 +46,7 @@ export function ImportFormatsSection() {
   const baseText = drafts.settings ?? originalText;
   const [form, setForm] = useState<Settings>(() => readSettings(baseText));
   const [customDateFormats, setCustomDateFormats] = useState<Record<number, boolean>>({});
-  const [openFormats, setOpenFormats] = useState<Record<number, boolean>>({ 0: true });
+  const [openFormats, setOpenFormats] = useState<Record<number, boolean>>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   // The text this form last wrote to the session draft. Anything else means an outside change (discard, reload).
@@ -171,7 +171,7 @@ export function ImportFormatsSection() {
                 <span className="format-summary-title">{format.name.trim() || `Format ${index + 1}`}</span>
                 <span className="format-summary-meta">
                   <span className={`format-summary-status ${complete ? 'is-done' : 'is-incomplete'}`}>{complete ? 'Complete' : 'Incomplete'}</span>
-                  <span className="format-chevron" aria-hidden="true">⌄</span>
+                  <span className="format-toggle"><span className="format-expand">Expand</span><span className="format-collapse">Collapse</span><span className="format-chevron" aria-hidden="true">⌄</span></span>
                 </span>
               </summary>
               <div className="settings-grid">

@@ -5,7 +5,7 @@ import { useSession, type SaveResult } from '../state/session';
 import { BudgetInspector } from './BudgetInspector';
 import { TomlEditor, type TomlEditorHandle } from './TomlEditor';
 import { SectionTabs, useSectionParam, type SectionItem } from './SectionTabs';
-import { PreviewNotice } from './common';
+import { PageHeader, PreviewNotice } from './common';
 import './budget-studio.css';
 
 type View = 'editor' | 'split' | 'budget';
@@ -84,13 +84,9 @@ export function BudgetPage() {
     </>
   );
   return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}`}>
-    <header className="page-head budget-page-head">
-      <div className="page-heading">
-        <h1>Budget</h1>
-        <p>Plan recurring income and expenses in TOML or visually.</p>
-      </div>
+    <PageHeader title="Budget">
       <SectionTabs items={VIEW_ITEMS} value={view} onChange={setView} label="Budget view" />
-    </header>
+    </PageHeader>
     <PreviewNotice isSample={isSample} />
   <section className={`budget-studio${view === 'budget' ? ' is-budget' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} aria-label="Budget studio">
     {(!parsed.ok || legacyDraft !== null) && <div className="studio-status" role="status">{!parsed.ok && 'Invalid draft. Showing the saved budget.'}<span className="studio-status-actions">{legacyDraft !== null && <button type="button" onClick={() => { if (window.confirm('Replace this draft with the previous standalone Budget draft? It remains stored separately in plaintext until you remove it from browser storage.')) { session.setDraft('financials', legacyDraft); setView('editor'); setNotice('Previous standalone draft loaded; it will be saved automatically.'); } }}>Recover old draft</button>}</span></div>}

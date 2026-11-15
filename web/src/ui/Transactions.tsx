@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, fullMonthLabel, type YearMonth } from '../domain/dates';
-import { Card, Money, MonthSelect, PreviewNotice, currencyOf, lastDataMonth, txMonths } from './common';
+import { Card, Money, MonthSelect, PageHeader, PreviewNotice, currencyOf, lastDataMonth, txMonths } from './common';
 import { readCsv } from '../domain/csv';
 import type { ImportFormat } from '../domain/config';
 import { Link } from 'react-router-dom';
@@ -53,13 +53,9 @@ export function Transactions() {
 
   return (
     <div className="page transactions-page">
-      <header className="page-head transactions-head">
-        <div className="page-heading transactions-heading">
-          <h1>Transactions</h1>
-          <p>{tab === 'formats' ? 'Describe how your bank CSV exports are read.' : tab === 'import' ? 'Add bank CSVs to build and update your transaction history.' : 'Review your imported transactions.'}</p>
-        </div>
+      <PageHeader title="Transactions">
         <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Transactions sections" />
-      </header>
+      </PageHeader>
       {tab === 'transactions' && hasTransactions && (
         <div className="transactions-controls">
           <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />

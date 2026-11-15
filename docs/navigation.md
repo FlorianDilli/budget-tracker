@@ -5,7 +5,7 @@ Every screen with more than one section uses the same control and state handling
 ## Rules
 
 1. **Control.** Use `SectionTabs` from `web/src/ui/SectionTabs.tsx`. Do not build a tab bar per screen, and do not add new tab styles. The only styles are the `.section-tabs` block in `web/src/styles.css`.
-2. **Placement.** Render it directly under the page title, left-aligned. On screens without a title (for example, the Budget studio header), place it at the start of the header row.
+2. **Placement.** Render it directly under the page title, left-aligned. Use `PageHeader` from `web/src/ui/common.tsx` for the header on every screen: large title first, no subtitle, then the sub-navigation left-aligned below it. The active item uses the brand colour (`var(--accent)`).
 3. **State.** Store the selected section in the URL query with `useSectionParam(param, ids, fallback)`. Use one param per screen: `tab` for section switches (Settings), `view` for layout views (Budget). This makes sections linkable and survives reloads.
 4. **One level.** Sub-sections never nest. A screen that needs deeper structure should become separate top-level routes.
 5. **Modes are sections.** Layout choices such as Editor / Split / Visual Budget use the same control. Do not add separate toggles.

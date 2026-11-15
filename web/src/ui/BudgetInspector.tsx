@@ -96,7 +96,7 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
   return <section className="budget-inspector" aria-label="Budget inspector">
     <div className="bi-toolbar">
       <label className="month-select"><span>Year</span><select aria-label="Year" value={year} onChange={(event) => setYear(Number(event.target.value))}>{[...years].sort((a, b) => a - b).map((y) => <option key={y}>{y}</option>)}</select></label>
-      <label className="month-select"><span>Sort</span><select aria-label="Sort transactions" value={sort} onChange={(event) => setSort(event.target.value as 'amount' | 'category')}><option value="amount">↕ Amount</option><option value="category">↕ Category</option></select></label>
+      <label className="month-select"><span>Sort by</span><select aria-label="Sort by" value={sort} onChange={(event) => setSort(event.target.value as 'amount' | 'category')}><option value="amount">↕ Amount</option><option value="category">↕ Category</option></select></label>
     </div>
     <div className="bi-body">
       <div className="bi-card bi-months"><div className="bi-card-head"><span>{year} Monthly Overview</span><span>Select month to inspect</span></div><div className="bi-month-grid">{months.map((label, i) => <button type="button" key={label} aria-pressed={month === i + 1} className={`bi-month ${month === i + 1 ? 'active' : ''} ${year === today.getFullYear() && i === today.getMonth() ? 'current' : ''}`} onClick={() => setMonth(i + 1)}><span>{label}</span><small className={sum(plans[i]) < 0 ? 'bi-negative' : 'bi-positive'}>{signed(sum(plans[i]))}</small></button>)}</div></div>

@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS, parseSettings, serializeSettings, type Settings } fro
 import { SAMPLE_SETTINGS } from '../domain/sample';
 import { envelopeCreatedAt } from '../crypto/envelope';
 import type { Snapshot } from '../domain/snapshot';
-import { Card, InfoButton, PreviewNotice } from './common';
+import { Card, InfoButton, PageHeader, PreviewNotice } from './common';
 
 const TABS = ['general', 'data'] as const;
 type Tab = (typeof TABS)[number];
@@ -19,13 +19,9 @@ export function Settings() {
   const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'general');
   return (
     <div className="page settings-page">
-      <header className="page-head">
-        <div className="settings-heading">
-          <h1>Settings</h1>
-          <p>{tab === 'general' ? 'Set your display preferences.' : 'Manage backups, account security, and stored budget data.'}</p>
-        </div>
+      <PageHeader title="Settings">
         <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Settings sections" />
-      </header>
+      </PageHeader>
       <PreviewNotice isSample={isSample} />
       {tab === 'general' && <SettingsForm />}
       {tab === 'data' && <DataTab />}

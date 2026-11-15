@@ -25,6 +25,22 @@ export function PreviewNotice({ isSample }: { isSample: boolean }) {
   return isSample ? <p className="sample-notice">Preview data is being shown. Save your budget or settings to keep your changes.</p> : null;
 }
 
+/**
+ * The one page header for every screen: large title first, then (when present)
+ * the sub-navigation / secondary controls left-aligned directly underneath.
+ * No subtitle — see docs/navigation.md.
+ */
+export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+  return (
+    <header className="page-head page-header">
+      <div className="page-heading">
+        <h1>{title}</h1>
+      </div>
+      {children ? <div className="page-subnav">{children}</div> : null}
+    </header>
+  );
+}
+
 export function InfoButton({ label, text }: { label: string; text: string }) {
   const details = useRef<HTMLDetailsElement>(null);
   const summary = useRef<HTMLElement>(null);

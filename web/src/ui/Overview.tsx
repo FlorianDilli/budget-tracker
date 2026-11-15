@@ -3,7 +3,7 @@ import { useSession } from '../state/session';
 import { analyzeMonth, topSpending } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
 import type { YearMonth } from '../domain/dates';
-import { Card, Money, MonthSelect, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
+import { Card, Money, MonthSelect, PageHeader, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
 
 export function Overview() {
   const { snapshot, settings, financials, isSample } = useSession();
@@ -28,13 +28,9 @@ export function Overview() {
 
   return (
     <div className="page">
-      <header className="page-head">
-        <div className="page-heading">
-          <h1>Overview</h1>
-          <p>Your budget, spending and total money at a glance.</p>
-        </div>
+      <PageHeader title="Overview">
         <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); }} label="Month" />
-      </header>
+      </PageHeader>
       <PreviewNotice isSample={isSample} />
 
       {empty && <p className="hint">No data yet. Add recurring entries in Budget and import a CSV in Transactions.</p>}

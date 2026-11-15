@@ -4,7 +4,7 @@ import { analyzeMonth } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
 import { currentMonth, monthLabel, monthOf } from '../domain/dates';
 import { sumCents, centsToDecimal, type Cents } from '../domain/money';
-import { Card, Money, PreviewNotice, currencyOf, dataMonths } from './common';
+import { Card, Money, PageHeader, PreviewNotice, currencyOf, dataMonths } from './common';
 
 interface Row {
   ym: string;
@@ -47,12 +47,7 @@ export function Insights() {
 
   return (
     <div className="page">
-      <header className="page-head">
-        <div className="page-heading">
-          <h1>Insights</h1>
-          <p>See how your total money, budgets and spending develop over time.</p>
-        </div>
-      </header>
+      <PageHeader title="Insights" />
       <PreviewNotice isSample={isSample} />
 
       <Card title="Total money over time" wide>

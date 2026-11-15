@@ -168,9 +168,12 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 .page { display: flex; flex-direction: column; gap: 1rem; }
 .page-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
+/* Unified page header: large title first, sub-navigation left-aligned below it. No subtitle. */
+.page-header { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: .75rem; }
 .page-heading { display: flex; flex-direction: column; gap: .05rem; min-width: 0; }
-.page-heading h1 { margin: 0; }
-.page-heading > p { max-width: 38rem; margin: .05rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
+.page-heading h1 { margin: 0; font-size: clamp(2rem, 5vw, 2.75rem); letter-spacing: -.04em; line-height: 1.1; }
+.page-subnav { display: flex; justify-content: flex-start; align-items: center; flex-wrap: wrap; gap: .5rem; min-width: 0; }
+.page-subnav .section-tabs { margin: 0; }
 .month-select { flex: 0 0 auto; flex-direction: row; align-items: center; gap: 0.5rem; padding: .45rem .65rem; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-size: .82rem; font-weight: 700; }
 .month-select select { flex: 1 1 auto; padding: .4rem .5rem; border-radius: 7px; font-size: .82rem; font-weight: 700; }
 /* Unified selector look: every <select> matches the transaction-month selector. */
@@ -228,7 +231,7 @@ tbody tr { cursor: default; }
 /* Section tabs: the only sub-navigation control. See docs/navigation.md. */
 .section-tabs { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); max-width: 100%; overflow-x: auto; }
 .section-tabs button { flex-shrink: 0; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font-size: .78rem; font-weight: 700; white-space: nowrap; }
-.section-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+.section-tabs button.active { background: var(--accent); color: #11140e; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
 .budget { display: flex; flex-direction: column; gap: 1rem; }
 
 @media (min-width: 900px) {
@@ -253,7 +256,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .nav a.active { color: var(--text); background: var(--accent); border-radius: 10px; }
 .content { max-width: 1440px; }
 .page { gap: 1.2rem; }
-.page-head h1 { font-size: 1.65rem; letter-spacing: -.04em; }
+.page-head h1 { font-size: clamp(2rem, 5vw, 2.75rem); letter-spacing: -.04em; }
 .card, .kpi, .pane { border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, .035); }
 .card { overflow-x: auto; }
 .card h2 { font-size: .92rem; letter-spacing: -.01em; }
@@ -402,7 +405,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .pane-foot { padding: .55rem .75rem; background: var(--bg); border-top: 1px solid var(--border); font-size: .75rem; }
 .editor-stats { margin-left: auto; color: var(--muted); font-weight: 600; white-space: nowrap; }
 @media (max-width: 599px) {
-  .settings-page .page-head { align-items: flex-start; }
   .editor-actions { gap: .3rem; }
   .editor-grid .toml-editor .cm-editor { min-height: 320px; }
   .editor-stats { margin-left: 0; }
@@ -463,16 +465,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .format-summary .format-summary-status { padding: 0.15rem 0.55rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 0.68rem; }
 .format-summary .format-summary-status.is-done { color: var(--ok); border-color: var(--ok); }
 .format-summary .format-summary-status.is-incomplete { color: var(--neg); border-color: var(--neg); }
-.format-chevron { display: inline-block; transition: transform 0.15s ease; }
+.format-toggle { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; padding: .25rem .55rem; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: .7rem; font-weight: 700; white-space: nowrap; }
+.format-summary:hover .format-toggle, .format-summary:focus-visible .format-toggle { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.format-collapse, .format-card[open] .format-expand { display: none; }
+.format-card[open] .format-collapse { display: inline; }
+.format-chevron { display: grid; place-items: center; width: 1rem; height: 1rem; line-height: 1; transition: transform 0.15s ease; }
 .format-card[open] .format-chevron { transform: rotate(180deg); }
 .format-actions { display: flex; justify-content: flex-end; }
 .settings-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
 
 /* Settings: give preferences, imports, and account actions a clear hierarchy. */
 .settings-page { width: 100%; max-width: 1080px; margin-inline: auto; gap: 1.5rem; }
-.settings-page .page-head { align-items: flex-end; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
-.settings-heading { display: flex; flex-direction: column; gap: .05rem; }
-.settings-heading p { margin: .05rem 0 0; color: var(--muted); font-size: .85rem; line-height: 1.5; }
 .settings-page .section-tabs { flex: 0 0 auto; }
 .settings-page .card { padding: clamp(1rem, 2vw, 1.35rem); }
 .settings-page .card-title { margin-bottom: .9rem; }
@@ -493,9 +496,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 /* Same scale/width as the other tabs (Overview, Insights, …): no page-specific
    max-width or enlarged heading, so the topbar/logo and page head share one zoom level. */
 .transactions-page { gap: 1.2rem; }
-.transactions-head { align-items: center; }
-.transactions-heading h1 { font-size: 1.65rem; letter-spacing: -.04em; }
-.transactions-head .section-tabs { margin-left: auto; }
 .transactions-controls { display: flex; justify-content: flex-start; }
 .import-panel { display: flex; flex-direction: column; gap: 1rem; padding: clamp(1rem, 2.5vw, 1.6rem); overflow: visible; border-color: color-mix(in srgb, var(--accent) 20%, var(--border)); background: linear-gradient(125deg, color-mix(in srgb, var(--accent) 5%, var(--surface)), var(--surface) 48%); }
 .import-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
@@ -530,13 +530,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .transactions-empty-mark { display: grid; flex: 0 0 auto; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid var(--border); border-radius: 9px; color: var(--muted); font-family: var(--mono); font-size: 1.15rem; }
 .transactions-empty h3 { margin: 0; font-size: .88rem; }
 .transactions-empty p { margin: .2rem 0 0; color: var(--muted); font-size: .8rem; }
-@media (max-width: 680px) {
-  .transactions-head { align-items: flex-start; }
-  .transactions-head .section-tabs { margin-left: auto; }
-}
 @media (max-width: 430px) {
-  .transactions-head { flex-direction: column; }
-  .transactions-head .section-tabs { margin-left: 0; align-self: flex-start; }
+  .page-subnav .section-tabs { align-self: flex-start; }
 }
 .format-empty > button { flex: 0 0 auto; min-height: 2.65rem; padding-inline: 1rem; }
 .format-add { margin-top: 1rem; }
@@ -563,7 +558,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .settings-actions button.primary { box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 20%, transparent); }
 .settings-actions [role='status'] { margin-left: .35rem; font-size: .82rem; }
 @media (max-width: 599px) {
-  .settings-page .page-head { align-items: stretch; }
   .settings-page .section-tabs { align-self: flex-start; }
   .settings-form > .card:first-of-type .settings-grid { grid-template-columns: 1fr; }
   .settings-form > .card:first-of-type .settings-grid > label.check { grid-column: auto; }

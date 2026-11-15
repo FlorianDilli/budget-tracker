@@ -60,9 +60,9 @@
 .bi-diff summary::-webkit-details-marker { display: none; }
 .bi-diff summary > span:first-child { flex: 1; }
 .bi-diff summary strong { font-family: var(--bi-mono); }
-.bi-toggle { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--bi-border); border-radius: 7px; background: var(--bi-surface); color: var(--bi-muted); font-size: .65rem; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
+.bi-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; border: 1px solid var(--bi-border); border-radius: 7px; background: var(--bi-surface); color: var(--bi-muted); font-size: .65rem; white-space: nowrap; transition: background-color .15s ease, border-color .15s ease, color .15s ease; }
 .bi-diff summary:hover .bi-toggle, .bi-diff summary:focus-visible .bi-toggle { border-color: color-mix(in srgb, #8fdc2b 55%, var(--bi-border)); background: color-mix(in srgb, #8fdc2b 12%, var(--bi-surface)); color: var(--bi-green); }
-.bi-toggle-icon { display: inline-block; transition: transform .15s ease; }
+.bi-toggle-icon { display: grid; place-items: center; width: 1rem; height: 1rem; line-height: 1; transition: transform .15s ease; }
 .bi-diff[open] .bi-toggle-icon { transform: rotate(180deg); }
 .bi-collapse, .bi-diff[open] .bi-expand { display: none; }
 .bi-diff[open] .bi-collapse { display: inline; }
