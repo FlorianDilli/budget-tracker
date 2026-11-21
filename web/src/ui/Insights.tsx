@@ -1,10 +1,10 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useRef, useState } from 'react';
 import { useSession } from '../state/session';
 import { analyzeMonth } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
 import { currentMonth, monthLabel, monthOf } from '../domain/dates';
 import { sumCents, centsToDecimal, type Cents } from '../domain/money';
-import { Card, Money, PageHeader, PreviewNotice, currencyOf, dataMonths } from './common';
+import { PageHeader, PreviewNotice, currencyOf, dataMonths } from './common';
 
 interface Row {
   ym: string;
@@ -19,6 +19,7 @@ interface Row {
 export function Insights() {
   const { snapshot, settings, financials, isSample } = useSession();
   const now = useMemo(() => new Date(), []);
+  const [mode, setMode] = useState<'rhythm' | 'table'>('rhythm');
   if (!snapshot) return null;
   const cur = currencyOf(settings);
   const cutoff = currentMonth(now);
@@ -33,10 +34,8 @@ export function Insights() {
     });
   }, [snapshot, settings, financials, now, cutoff]);
 
-  // Chart starts at the first month with transactions, not where the budget plan starts.
   const firstTx = rows.findIndex((r) => r.hasTx);
-  const chartRows = firstTx >= 0 ? rows.slice(firstTx) : rows;
-  // The monthly report below the plot starts at the same month as the plot.
+  const chartRows = (firstTx >= 0 ? rows.slice(firstTx) : rows).filter((r) => r.total !== 0 || r.hasData);
   const reportRows = chartRows;
   const withData = reportRows.filter((r) => r.hasData);
   const avg = (key: 'budget' | 'spend' | 'left') => {
@@ -44,84 +43,147 @@ export function Insights() {
     return Math.round(sumCents(withData.map((r) => r[key])) / withData.length);
   };
   const round = settings.roundAmounts;
+  const fmt = (cents: Cents) => `${centsToDecimal(cents, round)}${cur}`;
+
+  const peak = reportRows.length ? Math.max(...reportRows.map((r) => r.total)) : 0;
+  const peakRow = reportRows.find((r) => r.total === peak);
+  const currentRow = reportRows[reportRows.length - 1];
+  const surplus = reportRows.filter((r) => r.left >= 0).length;
+  const deficit = reportRows.filter((r) => r.left < 0).length;
 
   return (
     <div className="page">
       <PageHeader title="Insights" />
       <PreviewNotice isSample={isSample} />
 
-      <Card title="Total money over time" wide>
-        <TotalChart rows={chartRows.filter((r) => r.total !== 0 || r.hasData)} currency={cur} round={round} />
+      <section className="card">
+        <div className="card-header" style={{ flexWrap: 'wrap' }}>
+          <div>
+            <div className="card-title-text">Your Money Journey</div>
+            <div className="card-subtitle">Tap or hover any point to see balance and net outcome</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {peakRow && <span className="badge badge-pos">Peak {fmt(peak)} ({monthLabel(peakRow.ym)})</span>}
+            {currentRow && <span className="badge badge-neutral">Current {fmt(currentRow.total)}</span>}
+          </div>
+        </div>
+        <TotalChart rows={chartRows} currency={cur} round={round} />
         <p className="muted small">Each point shows your balance on day {settings.totalMoneyAsOfDay} of the month{settings.totalMoneyAsOfDay === 31 ? ' (the last day in shorter months)' : ''}.</p>
-      </Card>
+      </section>
 
-      <Card title="Months at a glance" wide>
-        {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
-          <table className="tx-table">
-            <thead>
-              <tr><th>Month</th><th className="num">Budget</th><th className="num">Non recurring</th><th className="num">Left</th><th className="num">Total money</th></tr>
-            </thead>
-            <tbody>
-              {reportRows.map((r, i) => {
-                const year = r.ym.slice(0, 4);
-                const newYear = i === 0 || reportRows[i - 1].ym.slice(0, 4) !== year;
-                return (
-                  <Fragment key={r.ym}>
-                    {newYear && (
-                      <tr className="year-row"><td colSpan={5}>{year}</td></tr>
-                    )}
-                    <tr className={r.hasData ? '' : 'muted'}>
-                      <td>{monthLabel(r.ym)}</td>
-                      <td className="num"><Money cents={r.budget} currency={cur} /></td>
-                      <td className="num"><Money cents={r.spend} currency={cur} /></td>
-                      <td className="num"><Money cents={r.left} currency={cur} /></td>
-                      <td className="num"><Money cents={r.total} currency={cur} /></td>
-                    </tr>
-                  </Fragment>
-                );
-              })}
-            </tbody>
-            {withData.length > 0 && (
-              <tfoot>
-                <tr>
-                  <td>Average</td>
-                  <td className="num">{centsToDecimal(avg('budget'), round)}{cur}</td>
-                  <td className="num">{centsToDecimal(avg('spend'), round)}{cur}</td>
-                  <td className="num">{centsToDecimal(avg('left'), round)}{cur}</td>
-                  <td />
-                </tr>
-              </tfoot>
+      <section className="card">
+        <div className="card-header" style={{ flexWrap: 'wrap' }}>
+          <div>
+            <div className="card-title-text">Monthly Rhythm (Surplus vs. Heavy Spend)</div>
+            <div className="card-subtitle">See immediately which months grew savings vs. heavy one-off expenses</div>
+          </div>
+          <div className="segmented">
+            <button type="button" className={`seg-btn${mode === 'rhythm' ? ' active' : ''}`} onClick={() => setMode('rhythm')}>Visual Rhythm</button>
+            <button type="button" className={`seg-btn${mode === 'table' ? ' active' : ''}`} onClick={() => setMode('table')}>Ledger Table</button>
+          </div>
+        </div>
+
+        {mode === 'rhythm' && (
+          <div>
+            {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
+              <RhythmGrid rows={reportRows} fmt={fmt} />
             )}
-          </table>
+            {withData.length > 0 && (
+              <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12.5, color: 'var(--muted)' }}>
+                  <span><strong style={{ color: 'var(--pos)' }}>{surplus} Surplus months</strong> (avg {fmt(avg('left'))})</span>
+                  <span><strong style={{ color: 'var(--neg)' }}>{deficit} Deficit months</strong></span>
+                </div>
+                <span className="badge badge-accent">{reportRows.length}-month report</span>
+              </div>
+            )}
+          </div>
         )}
-      </Card>
+
+        {mode === 'table' && (
+          <div className="table-wrap">
+            {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
+              <table className="tx-table">
+                <thead>
+                  <tr><th>Month</th><th className="num">Budget</th><th className="num">Non recurring</th><th className="num">Left</th><th className="num">Total money</th></tr>
+                </thead>
+                <tbody>
+                  {reportRows.map((r, i) => {
+                    const year = r.ym.slice(0, 4);
+                    const newYear = i === 0 || reportRows[i - 1].ym.slice(0, 4) !== year;
+                    return (
+                      <Fragment key={r.ym}>
+                        {newYear && (
+                          <tr className="year-row"><td colSpan={5}>{year}</td></tr>
+                        )}
+                        <tr className={r.hasData ? '' : 'muted'}>
+                          <td>{monthLabel(r.ym)}</td>
+                          <td className="num"><span className="num">{fmt(r.budget)}</span></td>
+                          <td className="num"><span className="num">{fmt(r.spend)}</span></td>
+                          <td className="num"><span className="num">{fmt(r.left)}</span></td>
+                          <td className="num"><strong className="num">{fmt(r.total)}</strong></td>
+                        </tr>
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+                {withData.length > 0 && (
+                  <tfoot>
+                    <tr>
+                      <td>Average</td>
+                      <td className="num">{fmt(avg('budget'))}</td>
+                      <td className="num">{fmt(avg('spend'))}</td>
+                      <td className="num">{fmt(avg('left'))}</td>
+                      <td />
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            )}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function RhythmGrid({ rows, fmt }: { rows: Row[]; fmt: (c: Cents) => string }) {
+  const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.left)));
+  return (
+    <div className="rhythm-grid">
+      {rows.map((r) => {
+        const isPos = r.left >= 0;
+        const pct = Math.max(10, Math.round((Math.abs(r.left) / maxAbs) * 100));
+        const col = isPos ? 'var(--pos)' : 'var(--neg)';
+        return (
+          <div key={r.ym} className={`rhythm-tile ${isPos ? 'surplus' : 'deficit'}`} title={`Budget: ${fmt(r.budget)} | One-off: ${fmt(r.spend)}`}>
+            <div className="rhythm-top"><span>{monthLabel(r.ym)}</span><span>{isPos ? 'Surplus' : 'Deficit'}</span></div>
+            <div className="rhythm-net num" style={{ color: col }}>{fmt(r.left)}</div>
+            <div className="rhythm-bar"><span style={{ width: `${pct}%`, background: col }} /></div>
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; round?: boolean }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const tipRef = useRef<HTMLDivElement>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; text: string } | null>(null);
+
   if (rows.length < 2) return <p className="muted">Need at least two months to draw the chart.</p>;
-  const W = 640;
-  const H = 260;
-  const pad = 72;
-  const padTop = 28;
-  const padBottom = 64; // room for rotated x labels
+  const W = 900, H = 265, padL = 54, padR = 24, padT = 24, padB = 36;
+  const cw = W - padL - padR, ch = H - padT - padB;
   const vals = rows.map((r) => r.total);
-  const min = Math.min(...vals, 0);
-  const max = Math.max(...vals, 0);
-  const span = max - min || 1;
-  const plotW = W - pad * 2;
-  const plotH = H - padTop - padBottom;
-  const x = (i: number) => pad + (i * plotW) / (rows.length - 1);
-  const y = (v: number) => H - padBottom - ((v - min) / span) * plotH;
-  const points = rows.map((r, i) => `${x(i).toFixed(1)},${y(r.total).toFixed(1)}`).join(' ');
-  // Thinning: every shown label keeps ~48px of horizontal room; extra months
-  // are skipped instead of overlapping. Rotated -45° labels stay readable.
-  const maxLabels = Math.max(2, Math.floor(plotW / 48));
-  const step = Math.max(1, Math.ceil(rows.length / maxLabels));
-  const showLabel = (i: number) => i === 0 || i === rows.length - 1 || i % step === 0;
-  const labelY = H - padBottom + 14;
-  // Horizontal gridlines with nice value ticks so large values are easy to estimate.
+  const minV = Math.min(...vals, 0);
+  const maxV = Math.max(...vals, 0);
+  const span = maxV - minV || 1;
+  const x = (i: number) => padL + (i * cw) / (rows.length - 1);
+  const y = (v: number) => padT + ch - ((v - minV) / span) * ch;
+  const linePath = rows.map((r, i) => `${i === 0 ? 'M' : 'L'} ${x(i).toFixed(1)} ${y(r.total).toFixed(1)}`).join(' ');
+  const areaPath = `${linePath} L ${x(rows.length - 1).toFixed(1)} ${padT + ch} L ${x(0).toFixed(1)} ${padT + ch} Z`;
+
   const niceStep = (raw: number) => {
     const magnitude = 10 ** Math.floor(Math.log10(Math.abs(raw)));
     const normalized = raw / magnitude;
@@ -130,40 +192,49 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
   };
   const tickStep = niceStep(span / 4);
   const ticks: number[] = [];
-  if (tickStep > 0) {
-    for (let t = Math.ceil(min / tickStep) * tickStep; t <= max; t += tickStep) {
-      ticks.push(Math.round(t));
-    }
-  }
-  if (ticks.length === 0) ticks.push(min, max);
-  const maxVal = Math.max(...vals);
-  const minVal = Math.min(...vals);
-  const maxIdx = vals.indexOf(maxVal);
-  const minIdx = vals.indexOf(minVal);
-  const pointAnchor = (i: number) => (i === 0 ? 'start' : i === rows.length - 1 ? 'end' : 'middle');
-  const pointDx = (i: number) => (i === 0 ? 6 : i === rows.length - 1 ? -6 : 0);
+  if (tickStep > 0) for (let t = Math.ceil(minV / tickStep) * tickStep; t <= maxV; t += tickStep) ticks.push(Math.round(t));
+  if (ticks.length === 0) ticks.push(minV, maxV);
+
+  const maxLabels = Math.max(2, Math.floor(cw / 64));
+  const step = Math.max(1, Math.ceil(rows.length / maxLabels));
+  const showLabel = (i: number) => i === 0 || i === rows.length - 1 || i % step === 0;
+
+  const showTip = (i: number) => {
+    const r = rows[i];
+    setTip({ x: x(i), y: y(r.total), text: `${monthLabel(r.ym)} · Total: ${centsToDecimal(r.total, round)}${currency} · Outcome: ${centsToDecimal(r.left, round)}${currency}` });
+  };
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`Total money from ${monthOf(rows[0].ym)} to ${monthOf(rows[rows.length - 1].ym)}`}>
-      {ticks.map((t) => (
-        <g key={t}>
-          <line x1={pad} x2={W - pad} y1={y(t)} y2={y(t)} className={t === 0 ? 'axis' : 'grid'} />
-          <text x={4} y={y(t) + 4} className="axis-label">{centsToDecimal(t, round)}{currency}</text>
-        </g>
-      ))}
-      {ticks.every((t) => t !== 0) && <line x1={pad} x2={W - pad} y1={y(0)} y2={y(0)} className="axis" />}
-      <polyline points={points} className="series" fill="none" />
-      {rows.map((r, i) => (
-        <g key={r.ym}>
-          <circle cx={x(i)} cy={y(r.total)} r={3} className={i === maxIdx || i === minIdx ? 'extremum' : undefined} />
-          {showLabel(i) && (
-            <text x={x(i)} y={labelY} textAnchor="end" transform={`rotate(-45 ${x(i)} ${labelY})`}>{r.ym}</text>
-          )}
-        </g>
-      ))}
-      <text x={x(maxIdx) + pointDx(maxIdx)} y={y(maxVal) - 10} textAnchor={pointAnchor(maxIdx)} className="point-label">{centsToDecimal(maxVal, round)}{currency}</text>
-      {minIdx !== maxIdx && (
-        <text x={x(minIdx) + pointDx(minIdx)} y={y(minVal) + 20} textAnchor={pointAnchor(minIdx)} className="point-label">{centsToDecimal(minVal, round)}{currency}</text>
+    <div className="chart-container" ref={wrapRef} onMouseLeave={() => setTip(null)}>
+      {tip && (
+        <div className="chart-tooltip" ref={tipRef} style={{
+          opacity: 1,
+          left: Math.max(4, Math.min(W - 180, tip.x - 90)),
+          top: Math.max(0, tip.y - 56),
+        }}>{tip.text}</div>
       )}
-    </svg>
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart" role="img" aria-label={`Total money from ${monthOf(rows[0].ym)} to ${monthOf(rows[rows.length - 1].ym)}`} style={{ width: '100%', height: 'auto', display: 'block' }}>
+        <defs>
+          <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#84e116" stopOpacity="0.34" />
+            <stop offset="100%" stopColor="#84e116" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {ticks.map((t) => (
+          <g key={t}>
+            <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className={t === 0 ? 'axis' : 'grid'} />
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="axis-label" fontSize="11" fill="#8a958f">{centsToDecimal(t, round)}{currency}</text>
+          </g>
+        ))}
+        <path d={areaPath} className="chart-area" />
+        <path d={linePath} className="chart-line" />
+        {rows.map((r, i) => (
+          <g key={r.ym}>
+            <circle cx={x(i)} cy={y(r.total)} r={6} className="chart-dot" onMouseEnter={() => showTip(i)} onClick={() => showTip(i)} />
+            {showLabel(i) && <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="#8a958f">{r.ym}</text>}
+          </g>
+        ))}
+      </svg>
+    </div>
   );
 }

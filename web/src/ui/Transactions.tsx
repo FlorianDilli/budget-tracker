@@ -45,11 +45,24 @@ export function Transactions() {
   }, [months, ym]);
   const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'transactions');
   const [selected, setSelected] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const [txFilter, setTxFilter] = useState<'all' | 'uncat' | 'verified'>('all');
   if (!snapshot) return null;
   const hasTransactions = snapshot.transactions.length > 0;
   const cur = currencyOf(settings);
   const a = analyzeMonth(financials, snapshot.transactions, ym);
   const selectedTx: TxAnalysis | undefined = a.txs.find((t) => t.tx.hash === selected);
+  const q = query.trim().toLowerCase();
+  const filtered = a.txs.filter((t) => {
+    if (txFilter === 'uncat' && t.category !== 'Uncategorized') return false;
+    if (txFilter === 'verified' && !t.flags.includes('VERIFIED')) return false;
+    if (q && !t.tx.description.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const inCents = filtered.filter((t) => t.tx.cents > 0).reduce((s, t) => s + t.tx.cents, 0);
+  const outCents = filtered.filter((t) => t.tx.cents < 0).reduce((s, t) => s + t.tx.cents, 0);
+  const uncatCount = a.txs.filter((t) => t.category === 'Uncategorized').length;
+  const verifiedCount = a.txs.filter((t) => t.flags.includes('VERIFIED')).length;
 
   return (
     <div className="page transactions-page">
@@ -73,27 +86,54 @@ export function Transactions() {
 
       {tab === 'formats' && <ImportFormatsSection />}
 
-      {tab === 'transactions' && hasTransactions && <Card title={fullMonthLabel(ym)} wide>
+      {tab === 'transactions' && hasTransactions && <section className="card wide" aria-label={fullMonthLabel(ym)}>
+        <div className="card-header">
+          <div>
+            <div className="card-title-text">{fullMonthLabel(ym)}</div>
+          </div>
+        </div>
+        <div className="tx-toolbar">
+          <div className="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search merchant or category..." aria-label="Search transactions" />
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="segmented" role="group" aria-label="Transaction filter">
+              <button type="button" className={`seg-btn${txFilter === 'all' ? ' active' : ''}`} onClick={() => setTxFilter('all')}>All ({a.txs.length})</button>
+              <button type="button" className={`seg-btn${txFilter === 'uncat' ? ' active' : ''}`} onClick={() => setTxFilter('uncat')}>Uncat ({uncatCount})</button>
+              <button type="button" className={`seg-btn${txFilter === 'verified' ? ' active' : ''}`} onClick={() => setTxFilter('verified')}>Verified ({verifiedCount})</button>
+            </div>
+            <span className="badge badge-pos num">+<Money cents={inCents} currency={cur} /> in</span>
+            <span className="badge badge-neg num"><Money cents={outCents} currency={cur} /> out</span>
+          </div>
+        </div>
         {a.txs.length === 0 ? <div className="transactions-empty">
           <span className="transactions-empty-mark" aria-hidden="true">—</span>
           <div><h3>No transactions this month</h3><p>Import a bank CSV in the Import tab to add activity for this month.</p></div>
-        </div> : (
-          <table className="tx-table">
-            <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Flags</th><th className="num">Amount</th></tr></thead>
-            <tbody>
-              {a.txs.map((t) => (
-                <tr key={t.tx.hash} className={selected === t.tx.hash ? 'selected' : ''} onClick={() => setSelected(t.tx.hash)}>
-                  <td>{t.tx.date}</td>
-                  <td>{t.tx.description}</td>
-                  <td>{t.category}</td>
-                  <td>{t.flags.map((f) => <span key={f} className={`flag ${f.toLowerCase()}`}>{FLAG_LABEL[f]}</span>)}</td>
-                  <td className="num"><Money cents={t.tx.cents} currency={cur} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        </div> : filtered.length === 0 ? <p className="muted">No transactions match this search.</p> : (
+          <div className="table-wrap">
+            <table className="tx-table">
+              <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Flags</th><th className="num">Amount</th></tr></thead>
+              <tbody>
+                {filtered.map((t) => (
+                  <tr key={t.tx.hash} className={selected === t.tx.hash ? 'selected' : ''} onClick={() => setSelected(t.tx.hash)}>
+                    <td className="tx-date num" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.tx.date}</td>
+                    <td className="tx-desc"><strong>{t.tx.description}</strong></td>
+                    <td className="tx-cat"><span className={`badge ${t.category === 'Uncategorized' ? 'badge-warn' : 'badge-neutral'}`}>{t.category}</span></td>
+                    <td className="tx-status">{t.flags.map((f) => <span key={f} className={`flag ${f.toLowerCase()}`}>{FLAG_LABEL[f]}</span>)}</td>
+                    <td className="tx-amt num" style={{ fontWeight: 700 }}><Money cents={t.tx.cents} currency={cur} /></td>
+                    <td className="tx-mobile-meta">
+                      <span className="num">{t.tx.date}</span>
+                      <span>·</span>
+                      <span className={`badge ${t.category === 'Uncategorized' ? 'badge-warn' : 'badge-neutral'}`} style={{ padding: '2px 8px', fontSize: 11 }}>{t.category}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </Card>}
+      </section>}
 
       {tab === 'transactions' && selectedTx && (
         <Card title="Detail" wide>
@@ -124,12 +164,19 @@ function DeleteMonthCard({ months }: { months: YearMonth[] }) {
     setMsg(`Deleted ${n} transaction(s) for ${ym}.`);
   };
   return (
-    <Card title="Delete a month" wide info="Permanently removes imported transactions for the selected month. Recurring entries and settings are not changed.">
-      <p className="muted">Removes imported transactions for one month. Settings and financials are unchanged.</p>
-      <MonthSelect months={months} value={ym} onChange={setYm} label="Month" />
-      <button className="danger" onClick={run}>Delete transactions</button>
+    <section className="card wide danger-card" aria-label="Delete a month">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 14 }}>
+        <div>
+          <div className="card-title-text" style={{ color: 'var(--neg)' }}>Delete Month Transactions</div>
+          <div className="card-subtitle">Removes imported transactions for one month without changing settings or budget rules.</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <MonthSelect months={months} value={ym} onChange={setYm} label="Month" />
+          <button className="danger" onClick={run}>Delete month</button>
+        </div>
+      </div>
       {msg && <p className="ok">{msg}</p>}
-    </Card>
+    </section>
   );
 }
 

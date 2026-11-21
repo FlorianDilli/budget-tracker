@@ -110,7 +110,14 @@ function SettingsForm() {
         </div>
       )}
 
-      <Card title="General">
+      <section className="card wide">
+        <div className="card-header">
+          <div>
+            <div className="card-title-text">Display &amp; Measurement</div>
+            <div className="card-subtitle">Settings are saved automatically</div>
+          </div>
+          <span className="badge badge-pos">Auto-saved</span>
+        </div>
         <div className="settings-grid">
           <label><span className="setting-label">Currency symbol<InfoButton label="Currency symbol" text="The symbol or code shown beside money amounts, such as €, EUR, or $." /></span>
             <input value={form.currencySymbol} maxLength={8} aria-invalid={!form.currencySymbol.trim()} onChange={(e) => update({ ...form, currencySymbol: e.target.value })} />
@@ -119,12 +126,19 @@ function SettingsForm() {
             <input type="number" min={1} max={31} step={1} value={form.totalMoneyAsOfDay} aria-describedby="total-day-help" onChange={(e) => { const n = Number(e.target.value); if (Number.isInteger(n) && n >= 1 && n <= 31) update({ ...form, totalMoneyAsOfDay: n }); }} />
             <span className="muted small" id="total-day-help">Day {form.totalMoneyAsOfDay} of each month{form.totalMoneyAsOfDay === 31 ? ' (last day; in shorter months the last day counts)' : ''}: later transactions count towards the next month.</span>
           </label>
-          <label className="check">
-            <input type="checkbox" checked={form.roundAmounts} onChange={(e) => update({ ...form, roundAmounts: e.target.checked })} />
-            <span className="setting-label">Round amounts to whole units<InfoButton label="Round amounts" text="When enabled, displayed totals are rounded to whole currency units instead of showing cents." /></span>
-          </label>
+          <div className="switch-row" style={{ gridColumn: '1 / -1' }}>
+            <div>
+              <div style={{ fontWeight: 600, fontSize: 13.5, display: 'flex', alignItems: 'center', gap: 4 }}>Round amounts to whole units <InfoButton label="Round amounts" text="When enabled, displayed totals are rounded to whole currency units instead of showing cents." /></div>
+              <div className="helper">Hides cents across Overview and Insights for cleaner visual scanning</div>
+            </div>
+            <label className="switch" aria-label="Round amounts to whole units">
+              <input type="checkbox" checked={form.roundAmounts} onChange={(e) => update({ ...form, roundAmounts: e.target.checked })} />
+              <span className="slider" aria-hidden="true" />
+              <span className="setting-label" style={{ display: 'none' }}>Round amounts to whole units</span>
+            </label>
+          </div>
         </div>
-      </Card>
+      </section>
 
 
       <footer className="settings-actions">
