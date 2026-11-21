@@ -616,9 +616,11 @@ body { font-size: 14px; line-height: 1.5; }
 
 /* Mobile bottom nav (mock) */
 .mobile-bottom-nav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; background: rgba(255,255,255,.88); backdrop-filter: blur(16px); border-top: 1px solid var(--border); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; align-items: center; }
-.mobile-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 10.5px; font-weight: 500; padding: 6px 4px; border-radius: 10px; position: relative; text-decoration: none; border: none; background: transparent; }
+.mobile-nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 10.5px; font-weight: 500; padding: 6px 4px; border-radius: 10px; position: relative; text-decoration: none; border: none; background: transparent; isolation: isolate; }
 .mobile-nav-btn svg { width: 20px; height: 20px; }
 .mobile-nav-btn.active { color: var(--accent-ink); font-weight: 700; }
+.mobile-nav-btn.active svg { color: #4a9600; }
+.mobile-nav-btn.active::before { content: ""; position: absolute; top: 2px; width: 36px; height: 26px; border-radius: 999px; background: var(--accent-soft); z-index: -1; }
 .mobile-dot-badge { position: absolute; top: 4px; right: calc(50% - 14px); width: 7px; height: 7px; border-radius: 50%; background: var(--warn); border: 1.5px solid #fff; }
 
 /* Main column + blurry sticky topbar */
@@ -627,6 +629,11 @@ body { font-size: 14px; line-height: 1.5; }
 .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .topbar-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
 .mobile-brand-badge { display: none; }
+.page-title { font-size: clamp(19px, 2.5vw, 22px); font-weight: 700; letter-spacing: -.025em; line-height: 1.2; margin: 0; }
+.topbar-controls { display: none; flex-direction: column; gap: 6px; }
+.topbar-controls:empty { display: none; }
+.topbar-controls:has(.page-subnav) { display: flex; }
+.topbar-controls .page-subnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .content { padding: 28px 36px 56px; max-width: 1180px; width: 100%; margin: 0 auto; gap: 24px; }
 
@@ -770,3 +777,72 @@ tbody tr:hover { background: var(--bg-subtle); }
   .tx-mobile-meta { grid-area: meta; display: flex !important; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 2px; }
 }
 .tx-mobile-meta { display: none; }
+
+/* ==========================================================================
+   BUDGET TAB — legacy version (pre-skin), carried over unchanged.
+   The mock skin above must not restyle the Budget studio/inspector.
+   Restore the old tokens + shared component look inside .budget-page only;
+   the shell (sidebar/topbar/bottom-nav) stays in the new skin.
+   ========================================================================== */
+.budget-page {
+  --bg: #f6f8f5;
+  --surface: #ffffff;
+  --text: #11140e;
+  --muted: #5e6459;
+  --border: #e1e5dc;
+  --accent: #b4f74d;
+  --pos: #2e7d4f;
+  --neg: #b3261e;
+  --warn-bg: #fff4d6;
+  --warn: #7a5200;
+  --err-bg: #fde8e7;
+  --err: #8a1c14;
+  --ok: #1e6b3c;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+@media (prefers-color-scheme: dark) {
+  .budget-page {
+    --bg: #0d0f0d;
+    --surface: #141714;
+    --text: #eff2ec;
+    --muted: #959e91;
+    --border: #303830;
+    --accent: #b4f74d;
+    --pos: #7fd29e;
+    --neg: #ff8a80;
+    --warn-bg: #3a2f10;
+    --warn: #ffd98a;
+    --err-bg: #3d1716;
+    --err: #ffb4ab;
+    --ok: #8fe0ae;
+  }
+}
+.budget-page .page-head h1, .budget-page .page-heading h1 { font-size: clamp(2rem, 5vw, 2.75rem); letter-spacing: -.04em; line-height: 1.1; margin: 0; }
+.budget-page .page-subnav { display: flex; }
+.budget-page .section-tabs { background: var(--bg); padding: 3px; }
+.budget-page .section-tabs button { font-size: .78rem; font-weight: 700; padding: .35rem .6rem; }
+.budget-page .section-tabs button.active { background: var(--accent); color: #11140e; box-shadow: 0 1px 3px rgba(0, 0, 0, .1); }
+.budget-page .card, .budget-page .kpi, .budget-page .pane { border-radius: 16px; box-shadow: 0 4px 12px rgba(0, 0, 0, .035); }
+.budget-page .card { padding: 1rem; }
+.budget-page .kpi { padding: 1.1rem; }
+.budget-page .grid-2 { gap: 1rem; }
+.budget-page .month-select { border-radius: 10px; padding: .45rem .65rem; box-shadow: none; }
+.budget-page .month-select > span { display: inline; }
+.budget-page .month-select select { border: 1px solid var(--border); background: var(--surface); padding: .4rem .5rem; border-radius: 7px; font-size: .82rem; }
+.budget-page select { border-radius: 10px; padding: .45rem .65rem; font-size: .82rem; }
+.budget-page select:focus, .budget-page input:focus { border-color: var(--border); box-shadow: none; outline: 2px solid #83bd31; outline-offset: 2px; }
+.budget-page button.primary { background: var(--accent); color: #11140e; }
+.budget-page button.danger { color: var(--neg); background: var(--surface); border-color: var(--border); }
+.budget-page .badge { border-radius: 4px; padding: .05rem .4rem; }
+.budget-page .badge-pos { background: transparent; color: var(--ok); }
+.budget-page .badge-neg { background: transparent; color: var(--neg); }
+.budget-page .badge-warn { background: var(--warn-bg); color: var(--warn); }
+.budget-page .badge-neutral { background: var(--bg); color: var(--muted); }
+.budget-page th, .budget-page td { padding: .4rem .5rem; font-size: .92rem; text-transform: none; letter-spacing: normal; color: inherit; }
+.budget-page .flag { border: 1px solid var(--border); border-radius: 4px; background: transparent; color: inherit; }
+.budget-page .flag.verified { color: var(--ok); }
+.budget-page .flag.amount_mismatch, .budget-page .flag.wrong_month { color: var(--neg); }
+.budget-page .switch-row { padding: 0; background: transparent; border: none; }
+.content:has(> .page.budget-page) { max-width: 1440px; padding: 1.25rem 1.5rem 2rem; }

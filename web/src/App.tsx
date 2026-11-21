@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { TopbarHostContext } from './ui/common';
 import { Link, NavLink, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import { SessionProvider, useSession } from './state/session';
 import { SetupScreen, UnlockScreen } from './ui/Gate';
@@ -34,10 +35,20 @@ const NAV = [
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ] as const;
 
+const TITLES: Record<string, string> = {
+  '/': 'Overview',
+  '/budget': 'Budget',
+  '/insights': 'Insights',
+  '/transactions': 'Transactions',
+  '/settings': 'Settings',
+};
+
 function Shell() {
   const { lock, error, setError, snapshot, financials } = useSession();
   const [collapsed, setCollapsed] = useState(false);
+  const [topbarHost, setTopbarHost] = useState<HTMLElement | null>(null);
   const location = useLocation();
+  const pageTitle = TITLES[location.pathname] ?? 'Overview';
   // Sidebar badge: number of alerts in the most recent data month (as in the mock).
   const alertCount = useMemo(() => {
     if (!snapshot) return 0;
@@ -50,7 +61,7 @@ function Shell() {
       <aside className="sidebar">
         <div className="sidebar-head">
           <div className="brand">
-            <span className="brand-icon"><img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={20} height={20} /></span>
+            <span className="brand-icon"><WalletIcon size={18} /></span>
             <span className="brand-name">Budget Tracker</span>
           </div>
           <button type="button" className="collapse-btn" onClick={() => setCollapsed((v) => !v)} title="Collapse or expand menu" aria-label="Toggle sidebar" aria-expanded={!collapsed}>
@@ -78,9 +89,8 @@ function Shell() {
         <header className="topbar">
           <div className="topbar-row">
             <div className="topbar-left">
-              <span className="mobile-brand-badge" aria-hidden="true">
-                <img src={`${import.meta.env.BASE_URL}logo.svg`} alt="" width={16} height={16} />
-              </span>
+              <span className="mobile-brand-badge" aria-hidden="true"><WalletIcon size={16} /></span>
+              <h1 className="page-title">{pageTitle}</h1>
             </div>
             <div className="topbar-actions">
               <Link className="btn btn-primary" to="/transactions?tab=import"><span aria-hidden="true">+</span><span className="btn-label">Import CSV</span></Link>
@@ -90,6 +100,7 @@ function Shell() {
               </button>
             </div>
           </div>
+          <div className="topbar-controls" ref={setTopbarHost} />
         </header>
         <main className="content">
           {error && (
@@ -97,14 +108,16 @@ function Shell() {
               {error} <button onClick={() => setError(null)}>Dismiss</button>
             </p>
           )}
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Overview />} />
-            <Route path="/budget" element={<BudgetPage />} />
-            <Route path="/insights" element={<Insights />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <TopbarHostContext.Provider value={topbarHost}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Overview />} />
+              <Route path="/budget" element={<BudgetPage />} />
+              <Route path="/insights" element={<Insights />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </TopbarHostContext.Provider>
         </main>
       </div>
 
@@ -118,6 +131,12 @@ function Shell() {
         ))}
       </nav>
     </div>
+  );
+}
+
+function WalletIcon({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" /></svg>
   );
 }
 

@@ -1,4 +1,5 @@
-import { useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import type { Financials, Settings } from '../domain/config';
 import type { Snapshot } from '../domain/snapshot';
 import { centsToDecimal, type Cents } from '../domain/money';
@@ -26,11 +27,19 @@ export function PreviewNotice({ isSample }: { isSample: boolean }) {
 }
 
 /**
- * The one page header for every screen: large title first, then (when present)
- * the sub-navigation / secondary controls left-aligned directly underneath.
- * No subtitle — see docs/navigation.md.
+ * The topbar renders the visible <h1> title (see App Shell). Pages portal
+ * their sub-navigation / secondary controls (MonthSelect, SectionTabs) into
+ * the topbar's second row so title + controls sit together as in the mock.
+ * Standalone usage (no topbar host) falls back to the legacy inline header.
  */
+export const TopbarHostContext = createContext<HTMLElement | null>(null);
+
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+  const host = useContext(TopbarHostContext);
+  if (host && children) {
+    return createPortal(<div className="page-subnav">{children}</div>, host);
+  }
+  if (host) return null;
   return (
     <header className="page-head page-header">
       <div className="page-heading">
