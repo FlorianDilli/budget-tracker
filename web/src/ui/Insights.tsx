@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useSession } from '../state/session';
 import { analyzeMonth } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
@@ -103,41 +103,21 @@ export function Insights() {
         {mode === 'table' && (
           <div className="table-wrap">
             {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
-              <table className="tx-table">
+              <table className="ledger-table">
                 <thead>
-                  <tr><th>Month</th><th className="num">Budget</th><th className="num">Non recurring</th><th className="num">Left</th><th className="num">Total money</th></tr>
+                  <tr><th>Month</th><th className="text-right">Budget</th><th className="text-right">Non-Rec</th><th className="text-right">Net</th><th className="text-right">Total</th></tr>
                 </thead>
                 <tbody>
-                  {reportRows.map((r, i) => {
-                    const year = r.ym.slice(0, 4);
-                    const newYear = i === 0 || reportRows[i - 1].ym.slice(0, 4) !== year;
-                    return (
-                      <Fragment key={r.ym}>
-                        {newYear && (
-                          <tr className="year-row"><td colSpan={5}>{year}</td></tr>
-                        )}
-                        <tr className={r.hasData ? '' : 'muted'}>
-                          <td>{monthLabel(r.ym)}</td>
-                          <td className="num"><span className="num">{fmt(r.budget)}</span></td>
-                          <td className="num"><span className="num">{fmt(r.spend)}</span></td>
-                          <td className="num"><span className="num">{fmt(r.left)}</span></td>
-                          <td className="num"><strong className="num">{fmt(r.total)}</strong></td>
-                        </tr>
-                      </Fragment>
-                    );
-                  })}
-                </tbody>
-                {withData.length > 0 && (
-                  <tfoot>
-                    <tr>
-                      <td>Average</td>
-                      <td className="num">{fmt(avg('budget'))}</td>
-                      <td className="num">{fmt(avg('spend'))}</td>
-                      <td className="num">{fmt(avg('left'))}</td>
-                      <td />
+                  {reportRows.map((r) => (
+                    <tr key={r.ym} className={r.hasData ? '' : 'muted'}>
+                      <td style={{ whiteSpace: 'nowrap' }}><strong>{monthLabel(r.ym)}</strong></td>
+                      <td className="text-right num">{fmt(r.budget)}</td>
+                      <td className="text-right num" style={{ color: r.spend >= 0 ? 'var(--pos)' : 'var(--neg)' }}>{r.spend >= 0 ? '+' : ''}{fmt(r.spend)}</td>
+                      <td className="text-right num" style={{ fontWeight: 700, color: r.left >= 0 ? 'var(--pos)' : 'var(--neg)' }}>{r.left >= 0 ? '+' : ''}{fmt(r.left)}</td>
+                      <td className="text-right num"><strong>{fmt(r.total)}</strong></td>
                     </tr>
-                  </tfoot>
-                )}
+                  ))}
+                </tbody>
               </table>
             )}
           </div>

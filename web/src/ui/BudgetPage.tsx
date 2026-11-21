@@ -19,8 +19,10 @@ const VIEW_ITEMS = [
 export function BudgetPage() {
   const session = useSession();
   const { snapshot, financials, drafts, isSample } = session;
-  // Narrow screens default to the visual budget because the split layout does not fit.
-  const [defaultView] = useState<View>(() => (window.innerWidth < 900 ? 'budget' : 'split'));
+  // Legacy budget always opens in Split so both the TOML editor and the
+  // Sankey/visual budget are present. On narrow screens the panels stack
+  // (see budget-studio.css) instead of hiding one.
+  const [defaultView] = useState<View>('split');
   const [view, setView] = useSectionParam<View>('view', VIEWS, defaultView);
   const [notice, setNotice] = useState('');
   const [saving, setSaving] = useState(false);

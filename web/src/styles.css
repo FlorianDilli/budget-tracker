@@ -626,15 +626,16 @@ body { font-size: 14px; line-height: 1.5; }
 /* Main column + blurry sticky topbar */
 .main-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar { position: sticky; top: 0; z-index: 20; background: rgba(244,246,245,.8); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(227,232,229,.85); padding: 14px 36px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.topbar-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
+.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; min-height: 36px; }
+.topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
 .mobile-brand-badge { display: none; }
-.page-title { font-size: clamp(19px, 2.5vw, 22px); font-weight: 700; letter-spacing: -.025em; line-height: 1.2; margin: 0; }
+.page-title { font-size: clamp(19px, 2.5vw, 22px); font-weight: 700; letter-spacing: -.025em; line-height: 1.1; margin: 0; display: flex; align-items: center; min-height: 32px; }
 .topbar-controls { display: none; flex-direction: column; gap: 6px; }
 .topbar-controls:empty { display: none; }
 .topbar-controls:has(.page-subnav) { display: flex; }
 .topbar-controls .page-subnav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.topbar-actions .btn { height: 32px; min-height: 32px; padding-top: 0; padding-bottom: 0; }
 .content { padding: 28px 36px 56px; max-width: 1180px; width: 100%; margin: 0 auto; gap: 24px; }
 
 /* Buttons */
@@ -704,6 +705,9 @@ input:focus, select:focus { border-color: #65b809; box-shadow: 0 0 0 3px rgba(13
 .rhythm-bar > span { display: block; height: 100%; border-radius: 999px; }
 .chart-container { position: relative; width: 100%; }
 .chart-tooltip { position: absolute; pointer-events: none; background: #141c18; color: #fff; padding: 8px 12px; border-radius: 9px; font-size: 12px; opacity: 0; transition: opacity .12s ease; z-index: 15; white-space: nowrap; }
+.ledger-table .text-right { text-align: right; }
+.ledger-table tbody tr:nth-child(odd) { background: var(--bg-subtle); }
+.ledger-table tbody tr:nth-child(even) { background: var(--surface); }
 .chart-area { fill: url(#balGrad); }
 .chart-line { fill: none; stroke: #6cc20a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .chart-dot { fill: #fff; stroke: #65b809; stroke-width: 2.5; cursor: pointer; }
