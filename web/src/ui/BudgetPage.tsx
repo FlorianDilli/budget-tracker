@@ -85,7 +85,7 @@ export function BudgetPage() {
       <button type="button" disabled={!dirty || saving} onClick={discard}>Discard changes</button>
     </>
   );
-  return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}`}>
+  return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}${view === 'budget' ? ' is-budget' : ''}`}>
     <PageHeader title="Budget">
       <SectionTabs items={VIEW_ITEMS} value={view} onChange={setView} label="Budget view" />
     </PageHeader>

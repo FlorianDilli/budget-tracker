@@ -65,13 +65,15 @@
   /* Legacy parity: both the TOML editor and the Sankey/visual budget stay
      mounted and reachable on narrow screens — stack them instead of hiding
      the inspector and the Split tab. */
-  .studio-split { flex-direction: column; overflow-y: auto; }
-  .studio-split .studio-editor { flex: 1 1 auto; border-right: 0; border-bottom: 1px solid var(--border); min-height: 40%; }
-  .studio-split .studio-inspector { display: flex; flex: 1 1 auto; min-height: 40%; }
+  .budget-studio:has(.studio-split) { height: auto; overflow: visible; }
+  .studio-split { flex-direction: column; flex: none; overflow: visible; }
+  .studio-split .studio-editor { flex: none; height: 420px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .studio-split .studio-inspector { flex: none; }
+  .studio-split .budget-inspector { height: auto; }
+  .studio-split .bi-body { overflow: visible; }
 }
 @media (max-width: 620px) {
   .budget-studio { height: max(520px, calc(100dvh - 12rem)); }
-  .section-tabs button { padding: 5px 7px; font-size: .7rem; }
 }
 
 /* Keep Visual Budget aligned with the app's normal page gutters. */
@@ -83,11 +85,3 @@
 .budget-studio.is-budget .budget-inspector { height: auto; }
 .budget-studio.is-budget .budget-inspector .bi-body { padding-left: 0; padding-right: 0; }
 .budget-studio.is-budget .budget-inspector .bi-toolbar { padding-left: 0; padding-right: 0; }
-
-/* Fill the viewport in split/editor views so only their panels scroll. */
-.shell:has(.budget-page:not(.is-budget)) { height: 100dvh; min-height: 0; overflow: hidden; }
-.shell:has(.budget-page:not(.is-budget)) > .content { min-height: 0; overflow: hidden; }
-.budget-page:not(.is-budget) { flex: 1 1 0; min-height: 0; }
-.budget-page:not(.is-budget) .budget-studio { flex: 1 1 0; height: auto; min-height: 0; }
-.budget-page:not(.is-budget) .studio-panels,
-.budget-page:not(.is-budget) .studio-editor { min-height: 0; }

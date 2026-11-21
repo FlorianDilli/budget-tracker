@@ -138,7 +138,7 @@ function RhythmGrid({ rows, fmt }: { rows: Row[]; fmt: (c: Cents) => string }) {
         return (
           <div key={r.ym} className={`rhythm-tile ${isPos ? 'surplus' : 'deficit'}`} title={`Budget: ${fmt(r.budget)} | One-off: ${fmt(r.spend)}`}>
             <div className="rhythm-top"><span>{monthLabel(r.ym)}</span><span>{isPos ? 'Surplus' : 'Deficit'}</span></div>
-            <div className="rhythm-net num" style={{ color: col }}>{fmt(r.left)}</div>
+            <div className="rhythm-net num" style={{ color: col }}>{isPos ? '+' : ''}{fmt(r.left)}</div>
             <div className="rhythm-bar"><span style={{ width: `${pct}%`, background: col }} /></div>
           </div>
         );

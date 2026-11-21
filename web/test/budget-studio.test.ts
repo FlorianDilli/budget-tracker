@@ -84,6 +84,25 @@ afterEach(async () => {
 });
 
 describe('native budget studio', () => {
+  it('keeps the editor and visual budget available on narrow screens', async () => {
+    Object.defineProperty(window, 'innerWidth', { value: 375, configurable: true });
+    await render(draft);
+    expect(button('Split').getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
+    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(false);
+    expect(container.querySelector('.bi-month-grid')).not.toBeNull();
+    expect(container.querySelector('.bi-flow')?.textContent).toContain('Cashflow Sankey');
+
+    await click(button('Visual Budget'));
+    expect(container.querySelector('.budget-page.is-budget')).not.toBeNull();
+    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(true);
+    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(false);
+    await click(button('Editor'));
+    expect(container.querySelector('.budget-page.is-budget')).toBeNull();
+    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
+    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(true);
+  });
+
   it('autosaves a valid editor draft without a manual save button', async () => {
     vi.useFakeTimers();
     try {

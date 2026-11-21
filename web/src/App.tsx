@@ -93,8 +93,8 @@ function Shell() {
               <h1 className="page-title">{pageTitle}</h1>
             </div>
             <div className="topbar-actions">
-              <Link className="btn btn-primary" to="/transactions?tab=import"><span aria-hidden="true">+</span><span className="btn-label">Import CSV</span></Link>
-              <button type="button" className="btn" onClick={lock} title="Lock app">
+              <Link className="btn btn-primary" to="/transactions?tab=import" aria-label="Import CSV"><span aria-hidden="true">+</span><span className="btn-label">Import CSV</span></Link>
+              <button type="button" className="btn" onClick={lock} title="Lock app" aria-label="Lock app">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
                 <span className="btn-label">Lock</span>
               </button>
