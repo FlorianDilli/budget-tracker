@@ -28,22 +28,28 @@ export function PreviewNotice({ isSample }: { isSample: boolean }) {
 
 /**
  * The topbar renders the visible <h1> title (see App Shell). Pages portal
- * their sub-navigation / secondary controls (MonthSelect, SectionTabs) into
- * the topbar's second row so title + controls sit together as in the mock.
+ * their title control and sub-navigation into the corresponding topbar rows.
  * Standalone usage (no topbar host) falls back to the legacy inline header.
  */
-export const TopbarHostContext = createContext<HTMLElement | null>(null);
+export const TopbarHostContext = createContext<{ subnav: HTMLElement | null; titleControl: HTMLElement | null } | null>(null);
 
-export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
+export function TitleControl({ children }: { children: ReactNode }) {
   const host = useContext(TopbarHostContext);
-  if (host && children) {
-    return createPortal(<div className="page-subnav">{children}</div>, host);
-  }
-  if (host) return null;
+  if (host) return host.titleControl ? createPortal(children, host.titleControl) : null;
+  return <>{children}</>;
+}
+
+export function PageHeader({ title, children, titleControl }: { title: string; children?: ReactNode; titleControl?: ReactNode }) {
+  const host = useContext(TopbarHostContext);
+  if (host) return <>
+    {host.titleControl && titleControl ? createPortal(titleControl, host.titleControl) : null}
+    {host.subnav && children ? createPortal(<div className="page-subnav">{children}</div>, host.subnav) : null}
+  </>;
   return (
     <header className="page-head page-header">
       <div className="page-heading">
         <h1>{title}</h1>
+        {titleControl}
       </div>
       {children ? <div className="page-subnav">{children}</div> : null}
     </header>
@@ -130,7 +136,7 @@ export function MonthSelect({ months, value, onChange, label }: { months: YearMo
   return (
     <label className="month-select">
       <span>{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)}>
+      <select aria-label={label} value={value} onChange={(e) => onChange(e.target.value)}>
         {months.map((m) => (
           <option key={m} value={m}>{monthLabel(m)}</option>
         ))}

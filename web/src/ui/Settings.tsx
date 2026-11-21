@@ -10,8 +10,8 @@ import { Card, InfoButton, PageHeader, PreviewNotice } from './common';
 const TABS = ['general', 'data'] as const;
 type Tab = (typeof TABS)[number];
 const TAB_ITEMS = [
-  { id: 'general', label: 'General' },
-  { id: 'data', label: 'Data' },
+  { id: 'general', label: 'Preferences' },
+  { id: 'data', label: 'Backup & Security' },
 ] as const satisfies readonly SectionItem<Tab>[];
 
 export function Settings() {

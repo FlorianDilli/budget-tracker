@@ -47,6 +47,7 @@ function Shell() {
   const { lock, error, setError, snapshot, financials } = useSession();
   const [collapsed, setCollapsed] = useState(false);
   const [topbarHost, setTopbarHost] = useState<HTMLElement | null>(null);
+  const [titleControlHost, setTitleControlHost] = useState<HTMLElement | null>(null);
   const location = useLocation();
   const pageTitle = TITLES[location.pathname] ?? 'Overview';
   // Sidebar badge: number of alerts in the most recent data month (as in the mock).
@@ -91,6 +92,7 @@ function Shell() {
             <div className="topbar-left">
               <span className="mobile-brand-badge" aria-hidden="true"><WalletIcon size={16} /></span>
               <h1 className="page-title">{pageTitle}</h1>
+              <div className="title-control" ref={setTitleControlHost} />
             </div>
             <div className="topbar-actions">
               <Link className="btn btn-primary" to="/transactions?tab=import" aria-label="Import CSV"><span aria-hidden="true">+</span><span className="btn-label">Import CSV</span></Link>
@@ -108,7 +110,7 @@ function Shell() {
               {error} <button onClick={() => setError(null)}>Dismiss</button>
             </p>
           )}
-          <TopbarHostContext.Provider value={topbarHost}>
+          <TopbarHostContext.Provider value={{ subnav: topbarHost, titleControl: titleControlHost }}>
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Overview />} />
               <Route path="/budget" element={<BudgetPage />} />

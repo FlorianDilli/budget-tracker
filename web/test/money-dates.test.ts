@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseDecimalToCents, numberToCents, divideCents, centsToDecimal } from '../src/domain/money';
-import { isIsoDate, parseIsoDate, monthLast, addMonths, monthRange, todayIso, fullMonthLabel } from '../src/domain/dates';
+import { isIsoDate, parseIsoDate, monthLast, addMonths, monthRange, todayIso, fullMonthLabel, shortDateLabel } from '../src/domain/dates';
 
 describe('money', () => {
   it('parses decimals to exact cents', () => {
@@ -56,5 +56,9 @@ describe('dates', () => {
   it('labels a month with its full name and year', () => {
     expect(fullMonthLabel('2026-09')).toBe('September 2026');
     expect(fullMonthLabel('2026-01')).toBe('January 2026');
+  });
+  it('formats balance dates as calendar dates without timezone conversion', () => {
+    expect(shortDateLabel('2026-09-30')).toBe('Sep 30, 2026');
+    expect(shortDateLabel('2024-02-01')).toBe('Feb 1, 2024');
   });
 });

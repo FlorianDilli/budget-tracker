@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { useSession, type ImportPreview } from '../state/session';
 import { analyzeMonth, type TxAnalysis } from '../domain/analysis';
 import { currentMonth, fullMonthLabel, type YearMonth } from '../domain/dates';
@@ -12,9 +12,9 @@ import { ImportFormatsSection } from './ImportFormats';
 const TABS = ['transactions', 'import', 'formats'] as const;
 type Tab = (typeof TABS)[number];
 const TAB_ITEMS = [
-  { id: 'transactions', label: 'Transactions' },
-  { id: 'import', label: 'Import' },
-  { id: 'formats', label: 'Formats' },
+  { id: 'transactions', label: 'Activity' },
+  { id: 'import', label: 'Import CSV' },
+  { id: 'formats', label: 'Bank Formats' },
 ] as const satisfies readonly SectionItem<Tab>[];
 
 const FLAG_LABEL: Record<string, string> = {
@@ -66,14 +66,9 @@ export function Transactions() {
 
   return (
     <div className="page transactions-page">
-      <PageHeader title="Transactions">
+      <PageHeader title="Transactions" titleControl={hasTransactions ? <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" /> : null}>
         <SectionTabs items={TAB_ITEMS} value={tab} onChange={setTab} label="Transactions sections" />
       </PageHeader>
-      {tab === 'transactions' && hasTransactions && (
-        <div className="transactions-controls">
-          <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); setSelected(null); }} label="Month" />
-        </div>
-      )}
       {hasTransactions && <PreviewNotice isSample={isSample} />}
 
       {tab === 'import' && (
@@ -221,10 +216,7 @@ function ImportPanel({
     finally { setBusy(false); }
   };
 
-  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const importFile = async (file: File) => {
     setError(null);
     setRowErrors([]);
     setDone(null);
@@ -243,22 +235,31 @@ function ImportPanel({
     } catch (err) { setError(err instanceof Error ? err.message : String(err)); }
   };
 
+  const onFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (file) void importFile(file);
+  };
+  const onDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    if (!busy && formats.length && e.dataTransfer.files[0]) void importFile(e.dataTransfer.files[0]);
+  };
+
   return (
     <section className="import-panel card wide" aria-labelledby="import-title">
       <div className="import-panel-heading">
         <div>
-          <h2 id="import-title">Add transactions from a CSV</h2>
-          <p>Upload a bank CSV and its transactions will be added automatically. Duplicates are skipped.</p>
+          <h2 id="import-title">Import Bank CSV</h2>
+          <p>Duplicates are skipped automatically · Parsed 100% locally</p>
           {formats.length > 0
-            ? <p className="import-formats"><strong>Configured formats:</strong> {formats.map((format) => format.name).join(', ')}</p>
+            ? <p className="import-formats"><span className="badge badge-accent">{formats.length === 1 ? 'Format' : 'Formats'}: {formats.map((format) => format.name).join(', ')}</span></p>
             : <p className="import-setup-note">Before importing, <Link to="/transactions?tab=formats">set up a bank CSV format</Link>.</p>}
         </div>
-        <span className="import-format-mark" aria-hidden="true">CSV</span>
       </div>
       <div className="import-panel-body">
-        <label className={`csv-picker${busy ? ' is-busy' : ''}${formats.length === 0 ? ' is-disabled' : ''}`}>
-          <span className="csv-picker-icon" aria-hidden="true">+</span>
-          <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Select a CSV file'}</strong><small>{source ? source.filename : formats.length ? 'CSV file · up to 10 MB' : 'Set up an import format to continue'}</small></span>
+        <label className={`csv-picker${busy ? ' is-busy' : ''}${formats.length === 0 ? ' is-disabled' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
+          <span className="csv-picker-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V3m-5 5 5-5 5 5" /><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" /></svg></span>
+          <span className="csv-picker-copy"><strong>{source ? 'Choose another CSV' : 'Tap or drop your CSV file here'}</strong><small>{source ? source.filename : formats.length ? 'CSV files up to 10 MB' : 'Set up an import format to continue'}</small></span>
           <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={busy || formats.length === 0} aria-label="Choose CSV file" />
         </label>
       </div>

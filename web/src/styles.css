@@ -626,8 +626,11 @@ body { font-size: 14px; line-height: 1.5; }
 /* Main column + blurry sticky topbar */
 .main-wrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar { position: sticky; top: 0; z-index: 20; background: rgba(244,246,245,.8); backdrop-filter: blur(14px); border-bottom: 1px solid rgba(227,232,229,.85); padding: 14px 36px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-.topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-width: 0; min-height: 36px; }
-.topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.topbar-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-width: 0; min-height: 36px; }
+.topbar-left { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-width: 0; }
+.title-control { display: flex; align-items: center; }
+.title-control:empty { display: none; }
+.title-control .month-select { flex: 0 0 auto; }
 .mobile-brand-badge { display: none; }
 .page-title { font-size: clamp(19px, 2.5vw, 22px); font-weight: 700; letter-spacing: -.025em; line-height: 1.1; margin: 0; display: flex; align-items: center; min-height: 32px; }
 .topbar-controls { display: none; flex-direction: column; gap: 6px; width: 100%; min-width: 0; }
@@ -652,9 +655,9 @@ button.danger { background: #fdecec; border-color: #f4c2c2; color: var(--neg); }
 .page-head { gap: 12px; }
 .page-heading h1 { font-size: clamp(19px, 2.5vw, 22px); font-weight: 700; letter-spacing: -.025em; line-height: 1.2; }
 .page-subnav { align-items: center; }
-.section-tabs { background: var(--bg-muted); border: 1px solid var(--border); padding: 4px; }
-.section-tabs button { color: var(--muted); font-size: 12.5px; font-weight: 500; padding: 6px 13px; }
-.section-tabs button.active { background: var(--surface); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(17,24,21,.04); }
+.section-tabs { background: transparent; border: 0; padding: 0; gap: 6px; }
+.section-tabs button { color: var(--muted); font-size: 12.5px; font-weight: 500; padding: 8px 14px; }
+.section-tabs button.active { background: #111815; color: #fff; font-weight: 600; box-shadow: none; }
 .month-select { border-radius: 999px; padding: 3px 8px; box-shadow: 0 1px 2px rgba(17,24,21,.04); }
 .month-select > span { display: none; }
 .month-select select { border: none; background: transparent; padding: 4px 2px; font-size: 13px; }
@@ -733,6 +736,13 @@ tbody tr:hover { background: var(--bg-subtle); }
 .dropzone { border: 2px dashed var(--accent-border); background: linear-gradient(180deg, #f9fef3 0%, #ffffff 100%); border-radius: var(--radius-lg); padding: 40px 20px; text-align: center; }
 .csv-picker { border-style: dashed; border-color: var(--accent-border); background: linear-gradient(180deg, #f9fef3 0%, #ffffff 100%); border-radius: var(--radius-lg); min-height: 0; padding: 40px 20px; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
 .csv-picker-icon { width: 46px; height: 46px; border-radius: 13px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 1.5rem; }
+.import-panel { border-color: var(--border); background: var(--surface); }
+.import-panel-heading h2 { font-size: 15.5px; }
+.import-panel-heading p { font-size: 13px; }
+.import-panel-heading .import-formats { margin-top: 12px; }
+.csv-picker { min-height: 185px; border-width: 2px; }
+.csv-picker-copy { flex: none; align-items: center; }
+.csv-picker-copy strong { font-size: 14px; }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; background: var(--bg-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); }
 .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; display: inline-block; }
 .switch input { opacity: 0; width: 0; height: 0; position: absolute; }

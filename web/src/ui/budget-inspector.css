@@ -111,7 +111,7 @@
 @container (min-width: 680px) { .bi-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } }
 @container (min-width: 820px) { .bi-transactions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
 @container (min-width: 900px) { .bi-month-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
-@container (max-width: 620px) { .bi-toolbar { display: grid; grid-template-columns: 1fr 1.25fr 1fr; } .bi-toolbar .month-select { padding: .45rem .5rem; font-size: .78rem; } .bi-toolbar .month-select select { width: 100%; min-width: 0; padding: .4rem .35rem; font-size: .75rem; } }
+@container (max-width: 620px) { .bi-toolbar { flex-wrap: wrap; } .bi-toolbar .month-select { padding: .45rem .5rem; font-size: .78rem; } .bi-toolbar .month-select select { min-width: 0; padding: .4rem .35rem; font-size: .75rem; } }
 .dark .budget-inspector { --bi-bg: #0d0f0d; --bi-surface: #141714; --bi-subtle: #191d19; --bi-border: #252b25; --bi-text: #eff2ec; --bi-muted: #959e91; --bi-faint: #6f776a; --bi-green: #86efac; --bi-red: #fca5a5; --bi-amber: #fbbf24; }
 .dark .bi-month { background: #1e241e; }
 .dark .bi-month.active { background: #b4f74d; color: #0e130a; }

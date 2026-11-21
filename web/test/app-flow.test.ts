@@ -66,6 +66,10 @@ describe('app security and navigation flow', () => {
       ...emptySnapshot('2026-10-30T12:00:00.000Z'),
       settingsToml: SAMPLE_SETTINGS,
       financialsToml: SAMPLE_FINANCIALS,
+      transactions: [
+        { hash: 'aug', date: '2026-08-12', description: 'August transaction', cents: -1000, account: 'Example' },
+        { hash: 'sep', date: '2026-09-12', description: 'September transaction', cents: -2000, account: 'Example' },
+      ],
     };
     const backupText = await sealEnvelope(JSON.stringify(backupSnapshot), backupPassword, backupSnapshot.savedAt);
 
@@ -90,6 +94,13 @@ describe('app security and navigation flow', () => {
       settingsToml: SAMPLE_SETTINGS,
       financialsToml: SAMPLE_FINANCIALS,
     });
+    await click(Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Transactions'))!);
+    const month = container.querySelector<HTMLSelectElement>('.topbar-left select[aria-label="Month"]')!;
+    expect(month.value).toBe('2026-09');
+    await act(async () => { month.value = '2026-08'; month.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(container.textContent).toContain('August transaction');
+    await click(button('Import CSV'));
+    expect(container.querySelector<HTMLSelectElement>('.topbar-left select[aria-label="Month"]')?.value).toBe('2026-08');
   }, 20000);
 
   it('offers a .budget import when a saved browser session is locked', async () => {
@@ -147,6 +158,13 @@ describe('app security and navigation flow', () => {
     expect(encrypted).toBeTruthy();
     expect(encrypted).not.toContain('short');
     expect(encrypted).not.toContain('settingsToml');
+    expect(container.querySelector('.topbar-left .title-control select[aria-label="Month"]')).not.toBeNull();
+    expect(container.textContent).toMatch(/As of [A-Z][a-z]{2} \d{1,2}, \d{4}/);
+
+    const budget = Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Budget'))!;
+    await click(budget);
+    expect(container.querySelector('.topbar-left .title-control select[aria-label="Year"]')).not.toBeNull();
+    expect(container.querySelector('.topbar-controls [aria-label="Budget view"]')).not.toBeNull();
 
     const transactions = Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Transactions'));
     expect(transactions).toBeDefined();
@@ -156,8 +174,8 @@ describe('app security and navigation flow', () => {
     expect(container.querySelector('.month-select')).toBeNull();
     expect(container.querySelector('.transactions-empty')).toBeNull();
     expect(container.querySelector('.tx-table')).toBeNull();
-    await click(button('Import'));
-    expect(container.textContent).toContain('Upload a bank CSV and its transactions will be added automatically.');
+    await click(button('Import CSV'));
+    expect(container.textContent).toContain('Duplicates are skipped automatically · Parsed 100% locally');
     expect(container.textContent).not.toContain('Review rows');
     expect(container.textContent).not.toContain('Import safely');
     expect(container.querySelector('.import-panel')).not.toBeNull();
@@ -188,7 +206,7 @@ describe('app security and navigation flow', () => {
     expect(container.querySelectorAll('.sample-notice')).toHaveLength(1);
     expect(container.querySelector('.sample-notice')?.textContent).toContain('Preview data is being shown');
     expect(container.querySelector('h1')?.compareDocumentPosition(container.querySelector('.sample-notice')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    await click(button('Data'));
+    await click(button('Backup & Security'));
     expect(container.textContent).not.toContain('Currency: EUR');
     expect(container.querySelector('.sample-notice')?.textContent).toContain('Preview data is being shown');
     expect(container.querySelector('h1')?.compareDocumentPosition(container.querySelector('.sample-notice')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -14,6 +14,7 @@ vi.mock('../src/ui/TomlEditor', () => ({
   }),
 }));
 import { BudgetPage } from '../src/ui/BudgetPage';
+import { TopbarHostContext } from '../src/ui/common';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -32,7 +33,7 @@ function parsed(text: string) {
   return result.value;
 }
 
-async function render(initialDraft: string | null = null, isSample = false, settings: Record<string, unknown> = {}) {
+async function render(initialDraft: string | null = null, isSample = false, settings: Record<string, unknown> = {}, titleHost?: HTMLElement) {
   function Harness() {
     const [savedText, setSavedText] = useState(saved);
     const [draftText, setDraftText] = useState(initialDraft);
@@ -45,7 +46,8 @@ async function render(initialDraft: string | null = null, isSample = false, sett
       snapshot: { financialsToml: savedText }, financials: parsed(savedText),       settings: { currencySymbol: 'USD', roundAmounts: false, ...settings },
       drafts: { financials: draftText, settings: null }, isSample, setDraft, saveFinancials,
     };
-    return createElement(MemoryRouter, null, createElement('div', null, createElement(BudgetPage), createElement('output', { 'data-testid': 'shared' }, parsed(savedText).recurring[0]?.description)));
+    const page = createElement('div', null, createElement(BudgetPage), createElement('output', { 'data-testid': 'shared' }, parsed(savedText).recurring[0]?.description));
+    return createElement(MemoryRouter, null, titleHost ? createElement(TopbarHostContext.Provider, { value: { titleControl: titleHost, subnav: null } }, page) : page);
   }
   await act(async () => root.render(createElement(Harness)));
 }
@@ -84,6 +86,21 @@ afterEach(async () => {
 });
 
 describe('native budget studio', () => {
+  it('places the year in the title and updates the visual budget', async () => {
+    const titleHost = document.createElement('div');
+    document.body.append(titleHost);
+    try {
+      await render(`${draft}start_date = "2024-01-01"\n`, false, {}, titleHost);
+      const year = titleHost.querySelector<HTMLSelectElement>('select[aria-label="Year"]')!;
+      expect(year).not.toBeNull();
+      expect(container.querySelector('.bi-toolbar select[aria-label="Year"]')).toBeNull();
+      await act(async () => { year.value = '2024'; year.dispatchEvent(new Event('change', { bubbles: true })); });
+      expect(container.querySelector('.bi-months')?.textContent).toContain('2024 Monthly Overview');
+    } finally {
+      titleHost.remove();
+    }
+  });
+
   it('keeps the editor and visual budget available on narrow screens', async () => {
     Object.defineProperty(window, 'innerWidth', { value: 375, configurable: true });
     await render(draft);
@@ -119,7 +136,7 @@ describe('native budget studio', () => {
       await act(async () => { vi.advanceTimersByTime(800); });
       expect(saveFinancials).toHaveBeenCalledWith(draft);
       expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Draft salary');
-      expect(container.querySelector('[role=status]')?.textContent).toContain('Saved automatically.');
+      expect(container.textContent).not.toContain('Budget is saved automatically');
     } finally {
       vi.useRealTimers();
     }
@@ -132,6 +149,19 @@ describe('native budget studio', () => {
       expect(container.querySelector('[role=alert]')?.textContent).toContain('Broken');
       await act(async () => { vi.advanceTimersByTime(2000); });
       expect(saveFinancials).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('still reports autosave errors without the removed status controls', async () => {
+    vi.useFakeTimers();
+    try {
+      await render();
+      await edit(draft);
+      saveFinancials.mockRejectedValue(new Error('Storage unavailable'));
+      await act(async () => { vi.advanceTimersByTime(800); });
+      expect(container.querySelector('[role=status]')?.textContent).toContain('Not saved: Storage unavailable');
     } finally {
       vi.useRealTimers();
     }
@@ -151,7 +181,8 @@ describe('native budget studio', () => {
     expect(container.textContent).not.toContain('Unsaved preview');
     expect(container.querySelector('[aria-label="Open TOML file"]')).toBeNull();
     expect(container.querySelector('[aria-label="Download TOML file"]')).toBeNull();
-    expect(container.querySelector('.studio-editor-actions')?.textContent).toContain('Budget is saved automatically.Discard changesClearCopyUndoRedoSearch');
+    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('ClearCopyUndoRedoSearch');
+    expect(container.textContent).not.toContain('Discard changes');
     expect(container.querySelector('.studio-editor-actions button')?.textContent).not.toBe('Wrap');
     expect(container.querySelector('.studio-editor-actions .primary')).toBeNull();
     expect(container.querySelector('.studio-footer')).toBeNull();
@@ -179,8 +210,8 @@ describe('native budget studio', () => {
     expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
     expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(true);
     expect(mocks.jump).toHaveBeenCalledWith(2);
-    await click(button('Discard changes'));
-    expect(setDraft).toHaveBeenLastCalledWith('financials', saved);
-    expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe(saved);
+    await click(button('Clear'));
+    expect(setDraft).toHaveBeenLastCalledWith('financials', '');
+    expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe('');
   });
 });

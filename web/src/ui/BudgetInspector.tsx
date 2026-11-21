@@ -4,6 +4,7 @@ import { planForMonth, type PlanLine } from '../domain/plan';
 import { useSession } from '../state/session';
 import { centsToDecimal } from '../domain/money';
 import type { Financials } from '../domain/config';
+import { TitleControl } from './common';
 import './budget-inspector.css';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -95,7 +96,7 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
 
   return <section className="budget-inspector" aria-label="Budget inspector">
     <div className="bi-toolbar">
-      <label className="month-select"><span>Year</span><select aria-label="Year" value={year} onChange={(event) => setYear(Number(event.target.value))}>{[...years].sort((a, b) => a - b).map((y) => <option key={y}>{y}</option>)}</select></label>
+      <TitleControl><label className="month-select"><span>Year</span><select aria-label="Year" value={year} onChange={(event) => setYear(Number(event.target.value))}>{[...years].sort((a, b) => a - b).map((y) => <option key={y}>{y}</option>)}</select></label></TitleControl>
       <label className="month-select"><span>Sort by</span><select aria-label="Sort by" value={sort} onChange={(event) => setSort(event.target.value as 'amount' | 'category')}><option value="amount">↕ Amount</option><option value="category">↕ Category</option></select></label>
     </div>
     <div className="bi-body">

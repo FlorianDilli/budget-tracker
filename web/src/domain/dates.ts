@@ -91,6 +91,12 @@ export function monthLabel(ym: YearMonth): string {
   return `${names[m - 1]} ${y}`;
 }
 
+/** Format an ISO calendar date without timezone conversion. */
+export function shortDateLabel(date: IsoDate): string {
+  const [year, month, day] = date.split('-');
+  return `${monthLabel(`${year}-${month}`).split(' ')[0]} ${Number(day)}, ${year}`;
+}
+
 export function fullMonthLabel(ym: YearMonth): string {
   const [y, m] = ym.split('-').map(Number);
   const names = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];

@@ -4,7 +4,7 @@ import { useSession } from '../state/session';
 import { analyzeMonth, topSpending } from '../domain/analysis';
 import { asOfForMonth, totalMoney } from '../domain/totals';
 import type { YearMonth } from '../domain/dates';
-import { monthLabel } from '../domain/dates';
+import { monthLabel, shortDateLabel } from '../domain/dates';
 import { centsToDecimal } from '../domain/money';
 import { MonthSelect, PageHeader, PreviewNotice, currencyOf, dataMonths, lastDataMonth } from './common';
 
@@ -55,9 +55,7 @@ export function Overview() {
 
   return (
     <div className="page">
-      <PageHeader title="Overview">
-        <MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); }} label="Month" />
-      </PageHeader>
+      <PageHeader title="Overview" titleControl={<MonthSelect months={months} value={ym} onChange={(m) => { userPickedMonth.current = true; setYm(m); }} label="Month" />} />
       <PreviewNotice isSample={isSample} />
       {empty && <p className="hint">No data yet. Add recurring entries in Budget and import a CSV in Transactions.</p>}
 
@@ -89,7 +87,7 @@ export function Overview() {
           <div className="card-header" style={{ marginBottom: 8 }}>
             <div>
               <div className="card-title-text">Total Balance</div>
-              <div className="card-subtitle">As of {total.asOf}</div>
+              <div className="card-subtitle">As of {shortDateLabel(total.asOf)}</div>
             </div>
           </div>
           <div className="balance-spark-row">

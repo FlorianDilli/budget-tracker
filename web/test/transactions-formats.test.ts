@@ -50,7 +50,7 @@ async function renderFormats() {
   await act(async () => root.render(createElement(Harness)));
 }
 
-async function renderTransactions(initialEntry: string) {
+async function renderTransactions(initialEntry: string, handlers?: { previewImport: ReturnType<typeof vi.fn>; commitImport: ReturnType<typeof vi.fn> }) {
   function Harness() {
     const [drafts, setDrafts] = useState<{ settings: string | null; financials: string | null }>({ settings: null, financials: null });
     const parsed = parseSettings(SAMPLE_SETTINGS);
@@ -62,8 +62,8 @@ async function renderTransactions(initialEntry: string) {
       drafts,
       setDraft: (kind: 'settings' | 'financials', text: string) => setDrafts((old) => ({ ...old, [kind]: text })),
       saveSettings,
-      previewImport: vi.fn(),
-      commitImport: vi.fn(),
+      previewImport: handlers?.previewImport ?? vi.fn(),
+      commitImport: handlers?.commitImport ?? vi.fn(),
       deleteMonth: vi.fn(),
     };
     return createElement(MemoryRouter, { initialEntries: [initialEntry] }, createElement(Transactions));
@@ -165,4 +165,20 @@ it('shows import and formats in their own Transactions tabs', async () => {
   await renderTransactions('/transactions?tab=formats');
   expect(container.querySelector('.format-card')).not.toBeNull();
   expect(container.querySelector('.import-panel')).toBeNull();
+});
+
+it('imports a dropped CSV through the same preview and commit workflow', async () => {
+  const preview = { duplicates: 2 };
+  const previewImport = vi.fn(async () => ({ ok: true, preview }));
+  const commitImport = vi.fn(async () => 3);
+  await renderTransactions('/transactions?tab=import', { previewImport, commitImport });
+  const file = new File(['Date,Amount\n2026-09-30,1'], 'bank.csv', { type: 'text/csv' });
+  Object.defineProperty(file, 'text', { value: async () => 'Date,Amount\n2026-09-30,1' });
+  const drop = new Event('drop', { bubbles: true, cancelable: true });
+  Object.defineProperty(drop, 'dataTransfer', { value: { files: [file] } });
+  await act(async () => { container.querySelector('.csv-picker')!.dispatchEvent(drop); });
+  expect(drop.defaultPrevented).toBe(true);
+  expect(previewImport).toHaveBeenCalledWith('Date,Amount\n2026-09-30,1', 'bank.csv', undefined);
+  expect(commitImport).toHaveBeenCalledWith(preview);
+  expect(container.textContent).toContain('3 new transaction(s) added, 2 duplicate(s) skipped.');
 });

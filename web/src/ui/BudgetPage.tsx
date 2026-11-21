@@ -25,7 +25,6 @@ export function BudgetPage() {
   const [defaultView] = useState<View>('split');
   const [view, setView] = useSectionParam<View>('view', VIEWS, defaultView);
   const [notice, setNotice] = useState('');
-  const [saving, setSaving] = useState(false);
   const [legacyDraft] = useState(() => {
     try { return localStorage.getItem('moonli_toml_content'); } catch { return null; }
   });
@@ -49,16 +48,13 @@ export function BudgetPage() {
   // Autosave: no manual Save button. Debounced so typing does not spam writes.
   useEffect(() => {
     if (!dirty || !parsed.ok || draft === initialDraft.current) return;
-    setSaving(true);
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
           const result: SaveResult = await saveFinancialsRef.current(draft);
-          setNotice(result.ok ? 'Saved automatically.' : 'Not saved. Fix the errors first.');
+          setNotice(result.ok ? '' : 'Not saved. Fix the errors first.');
         } catch (error) {
           setNotice(`Not saved: ${error instanceof Error ? error.message : String(error)}`);
-        } finally {
-          setSaving(false);
         }
       })();
     }, 800);
@@ -78,24 +74,17 @@ export function BudgetPage() {
     const file = event.dataTransfer.files?.[0];
     if (file) void load(file);
   };
-  const discard = () => { session.setDraft('financials', isSample ? SAMPLE_FINANCIALS : snapshot.financialsToml); setNotice('Draft reset to saved budget.'); };
-  const actions = (
-    <>
-      <span className="muted small" role="status">{saving ? 'Saving…' : notice || (dirty && !parsed.ok ? 'Fix the errors above to save.' : 'Budget is saved automatically.')}</span>
-      <button type="button" disabled={!dirty || saving} onClick={discard}>Discard changes</button>
-    </>
-  );
   return <div className={`page budget-page${view === 'editor' ? ' is-editor' : ''}${view === 'budget' ? ' is-budget' : ''}`}>
     <PageHeader title="Budget">
       <SectionTabs items={VIEW_ITEMS} value={view} onChange={setView} label="Budget view" />
     </PageHeader>
     <PreviewNotice isSample={isSample} />
+    {notice && <p className="muted small" role="status">{notice}</p>}
   <section className={`budget-studio${view === 'budget' ? ' is-budget' : ''}`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} aria-label="Budget studio">
     {(!parsed.ok || legacyDraft !== null) && <div className="studio-status" role="status">{!parsed.ok && 'Invalid draft. Showing the saved budget.'}<span className="studio-status-actions">{legacyDraft !== null && <button type="button" onClick={() => { if (window.confirm('Replace this draft with the previous standalone Budget draft? It remains stored separately in plaintext until you remove it from browser storage.')) { session.setDraft('financials', legacyDraft); setView('editor'); setNotice('Previous standalone draft loaded; it will be saved automatically.'); } }}>Recover old draft</button>}</span></div>}
     <div className={`studio-panels studio-${view}`}>
       <div className="studio-editor" hidden={view === 'budget'}>
         <div className="studio-editor-actions" role="group" aria-label="Editor actions">
-          {actions}
           <button type="button" onClick={() => session.setDraft('financials', '')}>Clear</button>
           <button type="button" onClick={() => void navigator.clipboard?.writeText(draft)}>Copy</button>
           <button type="button" onClick={() => editor.current?.undo()}>Undo</button>
@@ -106,11 +95,6 @@ export function BudgetPage() {
         {issue && <div className="error-banner" role="alert"><span>{issue.line ? `Line ${issue.line}: ` : ''}{issue.message}</span>{issue.line > 0 && <button type="button" onClick={() => editor.current?.jumpToLine(issue.line)}>Jump to line</button>}</div>}
       </div>
       <div className="studio-inspector" hidden={view === 'editor'}>
-        {view === 'budget' && (
-          <div className="studio-budget-actions" role="group" aria-label="Budget actions">
-            {actions}
-          </div>
-        )}
         <BudgetInspector financials={display} onSourceLineClick={parsed.ok ? (line) => { setView(view === 'split' ? 'split' : 'editor'); setJump({ line }); } : undefined} />
       </div>
     </div>
