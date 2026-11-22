@@ -203,7 +203,7 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
         {ticks.map((t) => (
           <g key={t}>
             <line x1={padL} x2={W - padR} y1={y(t)} y2={y(t)} className={t === 0 ? 'axis' : 'grid'} />
-            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="axis-label" fontSize="11" fill="#8a958f">{centsToDecimal(t, round)}{currency}</text>
+            <text x={padL - 8} y={y(t) + 4} textAnchor="end" className="axis-label" fontSize="11" style={{ fill: "var(--th-text)" }}>{centsToDecimal(t, round)}{currency}</text>
           </g>
         ))}
         <path d={areaPath} className="chart-area" />
@@ -211,7 +211,7 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
         {rows.map((r, i) => (
           <g key={r.ym}>
             <circle cx={x(i)} cy={y(r.total)} r={6} className="chart-dot" onMouseEnter={() => showTip(i)} onClick={() => showTip(i)} />
-            {showLabel(i) && <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" fill="#8a958f">{r.ym}</text>}
+            {showLabel(i) && <text x={x(i)} y={H - 10} textAnchor="middle" fontSize="11" style={{ fill: "var(--th-text)" }}>{r.ym}</text>}
           </g>
         ))}
       </svg>

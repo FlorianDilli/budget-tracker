@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { useSession } from '../state/session';
 import { CryptoError } from '../crypto/envelope';
+import { ThemeToggle } from './ThemeToggle';
 
 function errorText(e: unknown): string {
   if (e instanceof CryptoError) return e.message;
@@ -97,6 +98,7 @@ export function SetupScreen() {
           </form>
         </section>
       </div>
+      <div className="gate-theme-toggle"><ThemeToggle /></div>
     </main>
   );
 }
@@ -189,6 +191,7 @@ export function UnlockScreen() {
         </details>
       </section>
       <p className="gate-security-note"><span aria-hidden="true">&#9670;</span> Encrypted and stored on this device</p>
+      <div className="gate-theme-toggle"><ThemeToggle /></div>
     </main>
   );
 }

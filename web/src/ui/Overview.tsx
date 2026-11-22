@@ -31,7 +31,7 @@ export function Overview() {
   // --- donut: outflow (spending) split by category ---
   const donutCats = a.categories.filter((c) => c.cents !== 0);
   const donutTotal = donutCats.reduce((s, c) => s + Math.abs(c.cents), 0);
-  const donutColors = ['#84e116', '#111815', '#129452', '#c77700', '#65b809', '#9aa5a0'];
+  const donutColors = ['#84e116', 'var(--on-dark)', '#129452', '#c77700', '#65b809', 'var(--muted)'];
   let donutAcc = 0;
   const donutSegs = donutCats.map((c, i) => {
     const frac = donutTotal ? Math.abs(c.cents) / donutTotal : 0;
@@ -74,7 +74,7 @@ export function Overview() {
           <div>
             <div className="runway-bar" title="Budget vs Remaining">
               <div className="runway-seg" style={{ width: `${spentShare}%`, background: 'var(--accent)' }} />
-              <div className="runway-seg" style={{ width: `${100 - spentShare}%`, background: '#129452' }} />
+              <div className="runway-seg" style={{ width: `${100 - spentShare}%`, background: 'var(--pos)' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, fontSize: 12.5, color: 'var(--muted)' }}>
               <span>Planned: <strong className="num" style={{ color: 'var(--text)' }}>{fmt(a.budgetCents)}</strong></span>
@@ -113,13 +113,13 @@ export function Overview() {
           {donutSegs.length === 0 ? <p className="muted">No spending this month.</p> : (
             <div className="donut-wrap">
               <svg width="142" height="142" viewBox="0 0 146 146" role="img" aria-label={`Spending breakdown for ${monthLabel(ym)}`}>
-                <circle cx={73} cy={73} r={53} fill="none" stroke="#eef2f0" strokeWidth={20} />
+                <circle cx={73} cy={73} r={53} fill="none" strokeWidth={20} style={{ stroke: 'var(--track)' }} />
                 {donutSegs.map((s, i) => (
-                  <circle key={i} cx={73} cy={73} r={53} fill="none" stroke={s.color} strokeWidth={20}
+                  <circle key={i} cx={73} cy={73} r={53} fill="none" strokeWidth={20} style={{ stroke: s.color }}
                     strokeDasharray={`${s.len} 333`} strokeDashoffset={s.offset} transform="rotate(-90 73 73)" />
                 ))}
-                <text x={73} y={68} textAnchor="middle" fontSize={11} fill="#5a655f" fontWeight={600}>OUTFLOW</text>
-                <text x={73} y={87} textAnchor="middle" fontSize={18} fill="#111815" fontWeight={700} className="num">{fmt(donutCats.reduce((s, c) => s + c.cents, 0))}</text>
+                <text x={73} y={68} textAnchor="middle" fontSize={11} fontWeight={600} style={{ fill: 'var(--muted)' }}>OUTFLOW</text>
+                <text x={73} y={87} textAnchor="middle" fontSize={18} fontWeight={700} className="num" style={{ fill: 'var(--text)' }}>{fmt(donutCats.reduce((s, c) => s + c.cents, 0))}</text>
               </svg>
               <div className="donut-legend">
                 {donutSegs.map((s, i) => (
@@ -224,8 +224,8 @@ function Sparkline({ snapshot, financials, settings, now, cur, round }: { snapsh
     <svg width={150} height={50} viewBox={`0 0 ${W} ${H}`} aria-label="6 month balance sparkline" role="img">
       <defs><linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#84e116" stopOpacity="0.35" /><stop offset="100%" stopColor="#84e116" stopOpacity="0" /></linearGradient></defs>
       <path d={`${line} L${last.x},${H} L${coords[0].x},${H} Z`} fill="url(#sparkGrad)" />
-      <path d={line} fill="none" stroke="#6ec60b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last.x} cy={last.y} r="3.5" fill="#111815" />
+      <path d={line} fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ stroke: 'var(--accent)' }} />
+      <circle cx={last.x} cy={last.y} r="3.5" style={{ fill: 'var(--on-dark)' }} />
       <title>Total {centsToDecimal(pts[pts.length - 1], round)}{cur}</title>
     </svg>
   );

@@ -5,12 +5,12 @@ import { useSession } from '../state/session';
 import { centsToDecimal } from '../domain/money';
 import type { Financials } from '../domain/config';
 import { TitleControl } from './common';
+import { useTheme } from '../theme';
 import './budget-inspector.css';
 
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const fullMonths = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const colors = ['#d94c50', '#d86c24', '#a88400', '#5554c7', '#8743bc', '#087da7', '#c13d83'];
-const prefersDark = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-color-scheme: dark)').matches;
 const darkColors = ['#f17476', '#fa9850', '#e6c53d', '#8587ff', '#c084fc', '#44b6de', '#e878af'];
 const ymOf = (year: number, month: number) => `${year}-${String(month).padStart(2, '0')}`;
 const sum = (lines: PlanLine[]) => lines.reduce((total, line) => total + line.monthlyCents, 0);
@@ -37,7 +37,8 @@ function lastPlanMonth(financials: Financials, today: Date): { year: number; mon
 export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspectorProps) {
   const { settings } = useSession();
   const [today] = useState(() => new Date());
-  const dark = prefersDark();
+  const { resolved } = useTheme();
+  const dark = resolved === 'dark';
   const palette = dark ? darkColors : colors;
   const incomeColor = dark ? '#4ade80' : '#16a34a';
   // Default to the most recent month that actually has a plan,
@@ -121,7 +122,8 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
 
 function Cashflow({ income, expenses, currency, month, incomeColor }: { income: PlanLine[]; expenses: PlanLine[]; currency: (cents: number) => string; month: string; incomeColor: string }) {
   const uid = useId().replace(/:/g, '');
-  const dark = prefersDark();
+  const { resolved } = useTheme();
+  const dark = resolved === 'dark';
   const deficitColor = dark ? '#f87171' : '#dc2626';
   const surplusColor = '#b9fe67';
   const palette = dark ? darkColors : colors;

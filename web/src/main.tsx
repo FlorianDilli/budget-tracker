@@ -3,7 +3,10 @@ import { createRoot } from 'react-dom/client';
 import { HashRouter } from 'react-router-dom';
 import { App } from './App';
 import { registerServiceWorker } from './pwa';
+import { initTheme } from './theme';
 import './styles.css';
+
+initTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

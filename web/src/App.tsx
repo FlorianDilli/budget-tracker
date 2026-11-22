@@ -10,6 +10,7 @@ import { Settings } from './ui/Settings';
 import { BudgetPage } from './ui/BudgetPage';
 import { analyzeMonth } from './domain/analysis';
 import { lastDataMonth } from './ui/common';
+import { ThemeToggle } from './ui/ThemeToggle';
 
 export function App() {
   return (
@@ -95,6 +96,7 @@ function Shell() {
               <div className="title-control" ref={setTitleControlHost} />
             </div>
             <div className="topbar-actions">
+              <ThemeToggle />
               <Link className="btn btn-primary" to="/transactions?tab=import" aria-label="Import CSV"><span aria-hidden="true">+</span><span className="btn-label">Import CSV</span></Link>
               <button type="button" className="btn" onClick={lock} title="Lock app" aria-label="Lock app">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>

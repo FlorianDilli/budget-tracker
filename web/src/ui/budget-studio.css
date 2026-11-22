@@ -15,7 +15,7 @@
 .studio-status-actions button { padding: 2px 8px; font-size: .72rem; }
 .studio-budget-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border); }
 .studio-budget-actions button { flex-shrink: 0; padding: 3px 8px; border-radius: 6px; font-size: .78rem; font-weight: 700; }
-.studio-budget-actions button.primary { background: var(--accent); border-color: transparent; color: #11140e; }
+.studio-budget-actions button.primary { background: var(--accent); border-color: transparent; color: var(--on-accent); }
 .studio-panels { background: transparent; }
 .studio-status { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 10px; padding: 5px 12px; background: var(--bg); border-bottom: 1px solid var(--border); color: var(--muted); font-size: .73rem; }
 .studio-panels { display: flex; flex: 1; min-height: 0; overflow: hidden; }
@@ -31,14 +31,14 @@
 .studio-editor .cm-panel.cm-search { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--border); color: var(--text); }
 .studio-editor .cm-search .cm-textfield { min-width: 10rem; flex: 1 1 12rem; padding: 6px 10px; border-color: var(--border); border-radius: 8px; background: var(--bg); color: var(--text); }
 .studio-editor .cm-search .cm-button { margin: 0; padding: 5px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-size: .76rem; font-weight: 700; }
-.studio-editor .cm-search .cm-button:hover { border-color: #8fdc2b; }
+.studio-editor .cm-search .cm-button:hover { border-color: var(--accent); }
 .studio-editor .cm-search label { display: none; }
 .studio-editor .cm-search [name='close'] { position: static; order: 1; margin-left: auto; padding: 2px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 1rem; line-height: 1.3; }
 .studio-editor .cm-search br { display: none; }
 
 /* Search panel: larger close target everywhere, structured grid on mobile. */
 .studio-editor .cm-search [name='close'] { display: grid; place-items: center; min-width: 2.5rem; min-height: 2.5rem; padding: .35rem .6rem; font-size: 1.35rem; line-height: 1; }
-.studio-editor .cm-search [name='close']:hover { border-color: #ff8a80; }
+.studio-editor .cm-search [name='close']:hover { border-color: var(--neg); }
 @media (max-width: 620px) {
   /* Mobile search: one clear, thumb-friendly column — no cramped 4-column squeeze.
      Row 1: search field (full width)
@@ -55,7 +55,7 @@
   .studio-editor .cm-search [name='select'] { grid-column: 1 / -1; grid-row: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; min-height: 2.75rem; padding: .35rem .5rem; }
   /* CodeMirror hides the option labels on desktop; on mobile show them so the checkboxes are labelled. */
   .studio-editor .cm-search [name='select'] label { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; min-height: 2rem; }
-  .studio-editor .cm-search [name='select'] input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: #8fdc2b; }
+  .studio-editor .cm-search [name='select'] input[type='checkbox'] { width: 1.1rem; height: 1.1rem; accent-color: var(--accent); }
   .studio-editor .cm-search [name='replace'].cm-textfield { grid-column: 1 / -1; grid-row: 4; width: 100%; min-width: 0; min-height: 2.75rem; font-size: 1rem; }
   .studio-editor .cm-search button[name='replace'] { grid-column: 1 / -1; grid-row: 5; }
   .studio-editor .cm-search [name='replaceAll'] { grid-column: 1 / -1; grid-row: 6; min-height: 2.75rem; }
