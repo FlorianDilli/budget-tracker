@@ -199,8 +199,14 @@ describe('app security and navigation flow', () => {
     await click(button('Unlock'));
     await waitFor(() => container.querySelector('nav[aria-label=Main]') !== null);
     expect(container.textContent).toContain('Preview data is being shown');
-    expect(container.querySelectorAll('.nav-icon')).toHaveLength(5);
-    expect(Array.from(container.querySelectorAll('nav[aria-label=Main] a')).map((a) => a.textContent?.trim())).toEqual(['Overview', 'Budget', 'Insights', 'Transactions', 'Settings']);
+    expect(container.querySelectorAll('.nav-icon')).toHaveLength(6);
+    expect(Array.from(container.querySelectorAll('nav[aria-label=Main] a')).map((a) => a.textContent?.trim())).toEqual(['Overview', 'Budget', 'Insights', 'Transactions', 'Help', 'Settings']);
+    const helpLink = Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Help'))!;
+    expect(helpLink.getAttribute('href')).toBe('/help');
+    await click(helpLink);
+    expect(container.querySelector('h1')?.textContent).toBe('Help');
+    expect(container.textContent).toContain('What this app deliberately does NOT do');
+    expect(container.textContent).toContain('Lump-sum payment partner');
     const settingsLink = Array.from(container.querySelectorAll('nav[aria-label=Main] a')).find((a) => a.textContent?.includes('Settings'))!;
     await click(settingsLink);
     expect(container.querySelectorAll('.sample-notice')).toHaveLength(1);

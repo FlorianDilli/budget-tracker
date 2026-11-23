@@ -21,11 +21,6 @@ balance_snapshot_date = "2025-01-01"
 `;
 
 export const SAMPLE_FINANCIALS = `# Sample financials (synthetic). Edit and press Save to keep.
-[category_rules]
-"Groceries"     = ["market", "grocer"]
-"Utilities"     = ["power", "water"]
-"Subscriptions" = ["streamflix", "musicbox"]
-
 [[recurring_transactions]]
 description       = "Salary Demo Corp"
 amount            = 2500.00

@@ -46,7 +46,7 @@ export function Transactions() {
   const [tab, setTab] = useSectionParam<Tab>('tab', TABS, 'transactions');
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState('');
-  const [txFilter, setTxFilter] = useState<'all' | 'uncat' | 'verified'>('all');
+  const [txFilter, setTxFilter] = useState<'all' | 'verified'>('all');
   if (!snapshot) return null;
   const hasTransactions = snapshot.transactions.length > 0;
   const cur = currencyOf(settings);
@@ -54,14 +54,12 @@ export function Transactions() {
   const selectedTx: TxAnalysis | undefined = a.txs.find((t) => t.tx.hash === selected);
   const q = query.trim().toLowerCase();
   const filtered = a.txs.filter((t) => {
-    if (txFilter === 'uncat' && t.category !== 'Uncategorized') return false;
     if (txFilter === 'verified' && !t.flags.includes('VERIFIED')) return false;
-    if (q && !t.tx.description.toLowerCase().includes(q) && !t.category.toLowerCase().includes(q)) return false;
+    if (q && !t.tx.description.toLowerCase().includes(q)) return false;
     return true;
   });
   const inCents = filtered.filter((t) => t.tx.cents > 0).reduce((s, t) => s + t.tx.cents, 0);
   const outCents = filtered.filter((t) => t.tx.cents < 0).reduce((s, t) => s + t.tx.cents, 0);
-  const uncatCount = a.txs.filter((t) => t.category === 'Uncategorized').length;
   const verifiedCount = a.txs.filter((t) => t.flags.includes('VERIFIED')).length;
 
   return (
@@ -90,12 +88,11 @@ export function Transactions() {
         <div className="tx-toolbar">
           <div className="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search merchant or category..." aria-label="Search transactions" />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search description..." aria-label="Search transactions" />
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <div className="segmented" role="group" aria-label="Transaction filter">
               <button type="button" className={`seg-btn${txFilter === 'all' ? ' active' : ''}`} onClick={() => setTxFilter('all')}>All ({a.txs.length})</button>
-              <button type="button" className={`seg-btn${txFilter === 'uncat' ? ' active' : ''}`} onClick={() => setTxFilter('uncat')}>Uncat ({uncatCount})</button>
               <button type="button" className={`seg-btn${txFilter === 'verified' ? ' active' : ''}`} onClick={() => setTxFilter('verified')}>Verified ({verifiedCount})</button>
             </div>
             <span className="badge badge-pos num">+<Money cents={inCents} currency={cur} /> in</span>
@@ -108,19 +105,16 @@ export function Transactions() {
         </div> : filtered.length === 0 ? <p className="muted">No transactions match this search.</p> : (
           <div className="table-wrap">
             <table className="tx-table">
-              <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Flags</th><th className="num">Amount</th></tr></thead>
+              <thead><tr><th>Date</th><th>Description</th><th>Flags</th><th className="num">Amount</th></tr></thead>
               <tbody>
                 {filtered.map((t) => (
                   <tr key={t.tx.hash} className={selected === t.tx.hash ? 'selected' : ''} onClick={() => setSelected(t.tx.hash)}>
                     <td className="tx-date num" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.tx.date}</td>
                     <td className="tx-desc"><strong>{t.tx.description}</strong></td>
-                    <td className="tx-cat"><span className={`badge ${t.category === 'Uncategorized' ? 'badge-warn' : 'badge-neutral'}`}>{t.category}</span></td>
                     <td className="tx-status">{t.flags.map((f) => <span key={f} className={`flag ${f.toLowerCase()}`}>{FLAG_LABEL[f]}</span>)}</td>
                     <td className="tx-amt num" style={{ fontWeight: 700 }}><Money cents={t.tx.cents} currency={cur} /></td>
                     <td className="tx-mobile-meta">
                       <span className="num">{t.tx.date}</span>
-                      <span>·</span>
-                      <span className={`badge ${t.category === 'Uncategorized' ? 'badge-warn' : 'badge-neutral'}`} style={{ padding: '2px 8px', fontSize: 11 }}>{t.category}</span>
                     </td>
                   </tr>
                 ))}
@@ -136,9 +130,7 @@ export function Transactions() {
             <dt>Date</dt><dd>{selectedTx.tx.date}</dd>
             <dt>Description</dt><dd>{selectedTx.tx.description}</dd>
             <dt>Account</dt><dd>{selectedTx.tx.account}</dd>
-            <dt>Category</dt><dd>{selectedTx.category}</dd>
             <dt>Recurring match</dt><dd>{selectedTx.matchedEntry !== null ? financials.recurring[selectedTx.matchedEntry]?.label : 'none'}</dd>
-            <dt>Effect on spending</dt><dd><Money cents={selectedTx.spendCents} currency={cur} /></dd>
             <dt>Duplicate key</dt><dd className="mono small">{selectedTx.tx.hash.slice(0, 16)}…</dd>
           </dl>
         </Card>

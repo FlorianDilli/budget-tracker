@@ -9,8 +9,8 @@ import { PageHeader, PreviewNotice, currencyOf, dataMonths } from './common';
 interface Row {
   ym: string;
   budget: Cents;
-  spend: Cents;
-  left: Cents;
+  /** Monthly change of total balance vs. previous month (totalMoney delta). */
+  delta: Cents;
   total: Cents;
   hasData: boolean;
   hasTx: boolean;
@@ -26,21 +26,24 @@ export function Insights() {
 
   const rows: Row[] = useMemo(() => {
     const months = dataMonths(snapshot, financials, now).filter((m) => m <= cutoff);
-    return months.map((ym) => {
+    const base = months.map((ym) => {
       const a = analyzeMonth(financials, snapshot.transactions, ym);
       const t = totalMoney(settings, financials, snapshot.transactions, asOfForMonth(ym, settings, now));
       const hasData = a.txs.length > 0 || a.plan.some((p) => p.active);
-      return { ym, budget: a.budgetCents, spend: a.spendCents, left: a.leftCents, total: t.totalCents, hasData, hasTx: a.txs.length > 0 };
+      return { ym, budget: a.budgetCents, total: t.totalCents, hasData, hasTx: a.txs.length > 0 };
     });
+    // Balance change: delta of totalMoney vs. previous month in the series.
+    // First row has no predecessor, so its delta is 0 (not a real change).
+    return base.map((r, i) => ({ ...r, delta: i === 0 ? 0 : r.total - base[i - 1].total }));
   }, [snapshot, settings, financials, now, cutoff]);
 
   const firstTx = rows.findIndex((r) => r.hasTx);
   const chartRows = (firstTx >= 0 ? rows.slice(firstTx) : rows).filter((r) => r.total !== 0 || r.hasData);
   const reportRows = chartRows;
   const withData = reportRows.filter((r) => r.hasData);
-  const avg = (key: 'budget' | 'spend' | 'left') => {
+  const avgDelta = () => {
     if (!withData.length) return 0;
-    return Math.round(sumCents(withData.map((r) => r[key])) / withData.length);
+    return Math.round(sumCents(withData.map((r) => r.delta)) / withData.length);
   };
   const round = settings.roundAmounts;
   const fmt = (cents: Cents) => `${centsToDecimal(cents, round)}${cur}`;
@@ -48,8 +51,8 @@ export function Insights() {
   const peak = reportRows.length ? Math.max(...reportRows.map((r) => r.total)) : 0;
   const peakRow = reportRows.find((r) => r.total === peak);
   const currentRow = reportRows[reportRows.length - 1];
-  const surplus = reportRows.filter((r) => r.left >= 0).length;
-  const deficit = reportRows.filter((r) => r.left < 0).length;
+  const surplus = reportRows.filter((r) => r.delta >= 0).length;
+  const deficit = reportRows.filter((r) => r.delta < 0).length;
 
   return (
     <div className="page">
@@ -60,7 +63,7 @@ export function Insights() {
         <div className="card-header" style={{ flexWrap: 'wrap' }}>
           <div>
             <div className="card-title-text">Your Money Journey</div>
-            <div className="card-subtitle">Tap or hover any point to see balance and net outcome</div>
+            <div className="card-subtitle">Tap or hover any point to see balance and monthly balance change</div>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {peakRow && <span className="badge badge-pos">Peak {fmt(peak)} ({monthLabel(peakRow.ym)})</span>}
@@ -68,14 +71,14 @@ export function Insights() {
           </div>
         </div>
         <TotalChart rows={chartRows} currency={cur} round={round} />
-        <p className="muted small">Each point shows your balance on day {settings.totalMoneyAsOfDay} of the month{settings.totalMoneyAsOfDay === 31 ? ' (the last day in shorter months)' : ''}.</p>
+        <p className="muted small">Each point shows your balance on day {settings.totalMoneyAsOfDay} of the month{settings.totalMoneyAsOfDay === 31 ? ' (the last day in shorter months)' : ''}. Monthly rhythm = change of this balance vs. the previous month.</p>
       </section>
 
       <section className="card">
         <div className="card-header" style={{ flexWrap: 'wrap' }}>
           <div>
-            <div className="card-title-text">Monthly Rhythm (Surplus vs. Heavy Spend)</div>
-            <div className="card-subtitle">See immediately which months grew savings vs. heavy one-off expenses</div>
+            <div className="card-title-text">Monthly Rhythm (Balance Change)</div>
+            <div className="card-subtitle">See immediately which months grew the balance vs. shrank it</div>
           </div>
           <div className="segmented">
             <button type="button" className={`seg-btn${mode === 'rhythm' ? ' active' : ''}`} onClick={() => setMode('rhythm')}>Visual Rhythm</button>
@@ -91,8 +94,8 @@ export function Insights() {
             {withData.length > 0 && (
               <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 12.5, color: 'var(--muted)' }}>
-                  <span><strong style={{ color: 'var(--pos)' }}>{surplus} Surplus months</strong> (avg {fmt(avg('left'))})</span>
-                  <span><strong style={{ color: 'var(--neg)' }}>{deficit} Deficit months</strong></span>
+                  <span><strong style={{ color: 'var(--pos)' }}>{surplus} Growth months</strong> (avg balance change {fmt(avgDelta())})</span>
+                  <span><strong style={{ color: 'var(--neg)' }}>{deficit} Decline months</strong></span>
                 </div>
                 <span className="badge badge-accent">{reportRows.length}-month report</span>
               </div>
@@ -105,15 +108,14 @@ export function Insights() {
             {reportRows.length === 0 ? <p className="muted">No months to show yet.</p> : (
               <table className="ledger-table">
                 <thead>
-                  <tr><th>Month</th><th className="text-right">Budget</th><th className="text-right">Non-Rec</th><th className="text-right">Net</th><th className="text-right">Total</th></tr>
+                  <tr><th>Month</th><th className="text-right">Planned (Plan-Net)</th><th className="text-right">Balance Change</th><th className="text-right">Total</th></tr>
                 </thead>
                 <tbody>
                   {reportRows.map((r) => (
                     <tr key={r.ym} className={r.hasData ? '' : 'muted'}>
                       <td style={{ whiteSpace: 'nowrap' }}><strong>{monthLabel(r.ym)}</strong></td>
                       <td className="text-right num">{fmt(r.budget)}</td>
-                      <td className="text-right num" style={{ color: r.spend >= 0 ? 'var(--pos)' : 'var(--neg)' }}>{r.spend >= 0 ? '+' : ''}{fmt(r.spend)}</td>
-                      <td className="text-right num" style={{ fontWeight: 700, color: r.left >= 0 ? 'var(--pos)' : 'var(--neg)' }}>{r.left >= 0 ? '+' : ''}{fmt(r.left)}</td>
+                      <td className="text-right num" style={{ fontWeight: 700, color: r.delta >= 0 ? 'var(--pos)' : 'var(--neg)' }}>{r.delta >= 0 ? '+' : ''}{fmt(r.delta)}</td>
                       <td className="text-right num"><strong>{fmt(r.total)}</strong></td>
                     </tr>
                   ))}
@@ -128,17 +130,17 @@ export function Insights() {
 }
 
 function RhythmGrid({ rows, fmt }: { rows: Row[]; fmt: (c: Cents) => string }) {
-  const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.left)));
+  const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.delta)));
   return (
     <div className="rhythm-grid">
       {rows.map((r) => {
-        const isPos = r.left >= 0;
-        const pct = Math.max(10, Math.round((Math.abs(r.left) / maxAbs) * 100));
+        const isPos = r.delta >= 0;
+        const pct = Math.max(10, Math.round((Math.abs(r.delta) / maxAbs) * 100));
         const col = isPos ? 'var(--pos)' : 'var(--neg)';
         return (
-          <div key={r.ym} className={`rhythm-tile ${isPos ? 'surplus' : 'deficit'}`} title={`Budget: ${fmt(r.budget)} | One-off: ${fmt(r.spend)}`}>
-            <div className="rhythm-top"><span>{monthLabel(r.ym)}</span><span>{isPos ? 'Surplus' : 'Deficit'}</span></div>
-            <div className="rhythm-net num" style={{ color: col }}>{isPos ? '+' : ''}{fmt(r.left)}</div>
+          <div key={r.ym} className={`rhythm-tile ${isPos ? 'surplus' : 'deficit'}`} title={`Planned (Plan-Net): ${fmt(r.budget)} | Balance change: ${fmt(r.delta)}`}>
+            <div className="rhythm-top"><span>{monthLabel(r.ym)}</span><span>{isPos ? 'Growth' : 'Decline'}</span></div>
+            <div className="rhythm-net num" style={{ color: col }}>{isPos ? '+' : ''}{fmt(r.delta)}</div>
             <div className="rhythm-bar"><span style={{ width: `${pct}%`, background: col }} /></div>
           </div>
         );
@@ -181,7 +183,7 @@ function TotalChart({ rows, currency, round }: { rows: Row[]; currency: string; 
 
   const showTip = (i: number) => {
     const r = rows[i];
-    setTip({ x: x(i), y: y(r.total), text: `${monthLabel(r.ym)} · Total: ${centsToDecimal(r.total, round)}${currency} · Outcome: ${centsToDecimal(r.left, round)}${currency}` });
+    setTip({ x: x(i), y: y(r.total), text: `${monthLabel(r.ym)} · Total: ${centsToDecimal(r.total, round)}${currency} · Balance change: ${centsToDecimal(r.delta, round)}${currency}` });
   };
 
   return (

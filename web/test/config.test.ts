@@ -153,8 +153,13 @@ describe('configuration shape validation', () => {
     expect(parseSettings(text).ok).toBe(false);
   });
 
+  it('tolerates and ignores legacy category_rules', () => {
+    const r = parseFinancials('[category_rules]\n"Groceries" = ["market"]\n\n[[recurring_transactions]]\ndescription = "X"\namount = -5\n');
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.value.recurring).toHaveLength(1);
+  });
+
   it.each([
-    'category_rules = 1',
     'recurring_transactions = 1',
     'recurring_transactions = [1]',
     '[[recurring_transactions]]\namount = 1\namount_history = [1]',

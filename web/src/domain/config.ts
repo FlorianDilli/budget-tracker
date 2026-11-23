@@ -177,41 +177,27 @@ export interface RecurringEntry {
   category?: string;
 }
 
-export interface CategoryRule {
-  category: string;
-  keywords: string[];
-}
-
 export interface CashEntry {
   date: IsoDate;
   cents: Cents;
 }
 
 export interface Financials {
-  categoryRules: CategoryRule[];
   recurring: RecurringEntry[];
   cash: CashEntry[];
 }
 
-export const EMPTY_FINANCIALS: Financials = { categoryRules: [], recurring: [], cash: [] };
+export const EMPTY_FINANCIALS: Financials = { recurring: [], cash: [] };
 
 export function parseFinancials(text: string): Parsed<Financials> {
   const parsed = parseToml(text);
   if (!parsed.ok) return { ok: false, issues: [{ line: parsed.line, message: parsed.message }] };
   const root = parsed.value;
   const issues: ValidationIssue[] = [];
-  const out: Financials = { categoryRules: [], recurring: [], cash: [] };
+  const out: Financials = { recurring: [], cash: [] };
 
-  if (root.category_rules !== undefined && !table(root.category_rules)) issues.push({ line: lineOf(text, 'category_rules'), message: 'category_rules must be a table' });
-  const rules = table(root.category_rules) ? root.category_rules : {};
-  const rulesLine = lineOf(text, 'category_rules');
-  for (const [category, keywords] of Object.entries(rules)) {
-    if (!Array.isArray(keywords) || !keywords.every((k) => typeof k === 'string')) {
-      issues.push({ line: rulesLine, message: `Category "${category}": keywords must be a list of strings` });
-      continue;
-    }
-    out.categoryRules.push({ category, keywords: keywords as string[] });
-  }
+  // Legacy `category_rules` is intentionally tolerated and ignored:
+  // transaction categorization was removed (see Help). Unknown keys are skipped.
 
   if (root.recurring_transactions !== undefined && !Array.isArray(root.recurring_transactions)) issues.push({ line: lineOf(text, 'recurring_transactions'), message: 'recurring_transactions must be an array of tables' });
   const recurring = Array.isArray(root.recurring_transactions) ? root.recurring_transactions : [];

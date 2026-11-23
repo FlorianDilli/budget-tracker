@@ -8,6 +8,7 @@ import { Transactions } from './ui/Transactions';
 import { Insights } from './ui/Insights';
 import { Settings } from './ui/Settings';
 import { BudgetPage } from './ui/BudgetPage';
+import { Help } from './ui/Help';
 import { analyzeMonth } from './domain/analysis';
 import { lastDataMonth } from './ui/common';
 import { ThemeToggle } from './ui/ThemeToggle';
@@ -33,6 +34,7 @@ const NAV = [
   { to: '/budget', label: 'Budget', icon: 'budget' },
   { to: '/insights', label: 'Insights', icon: 'insights' },
   { to: '/transactions', label: 'Transactions', icon: 'transactions' },
+  { to: '/help', label: 'Help', icon: 'help' },
   { to: '/settings', label: 'Settings', icon: 'settings' },
 ] as const;
 
@@ -41,6 +43,7 @@ const TITLES: Record<string, string> = {
   '/budget': 'Budget',
   '/insights': 'Insights',
   '/transactions': 'Transactions',
+  '/help': 'Help',
   '/settings': 'Settings',
 };
 
@@ -118,6 +121,7 @@ function Shell() {
               <Route path="/budget" element={<BudgetPage />} />
               <Route path="/insights" element={<Insights />} />
               <Route path="/transactions" element={<Transactions />} />
+              <Route path="/help" element={<Help />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -151,6 +155,7 @@ function NavIcon({ name, iconClassName = 'nav-icon' }: { name: string; iconClass
       {name === 'transactions' && <><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><circle cx="3.5" cy="6" r="1" /><circle cx="3.5" cy="12" r="1" /><circle cx="3.5" cy="18" r="1" /></>}
       {name === 'insights' && <><path d="M3 3v18h18" /><path d="m19 9-5 5-4-4-3 3" /></>}
       {name === 'budget' && <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M8 13h8" /><path d="M8 17h8" /></>}
+      {name === 'help' && <><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></>}
       {name === 'settings' && <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></>}
     </svg>
   );
