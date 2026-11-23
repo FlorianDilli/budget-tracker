@@ -12,20 +12,22 @@ export function Help() {
 
       <section className="card" aria-labelledby="help-step1">
         <div className="card-title-text" id="help-step1">Step 1: Plan your budget</div>
-        <p>Add recurring entries in <strong>Budget</strong> (financials TOML). The monthly planned total is always just the sum of these entries — individual bookings never change it. Use <code>description</code> only for entries you want checked; omit it for plan-only entries. The <code>category</code> field is only a grouping label inside the budget, not a transaction category.</p>
-        <pre>{`[[recurring_transactions]]   # verifiable: checked against bookings
-description = "Salary"
+        <p>Add recurring entries in <strong>Budget</strong> with the designed input fields (no TOML needed). The monthly planned total is always just the sum of these entries — individual bookings never change it. Use <code>description</code> only for entries you want checked; leave it empty for plan-only entries. The optional <code>purpose</code> (Verwendungszweck) field is finer than the description: when the same person has several transactions, only bookings containing that purpose match the entry. The <code>category</code> field is only a grouping label inside the budget, not a transaction category.</p>
+        <p>Already have an old <code>financials.toml</code>? Use <strong>Import old TOML file</strong> on the Budget page (or drop the file there) — it is parsed and written directly into the form fields. The raw TOML stays available under the <strong>TOML</strong> tab for power users.</p>
+        <pre>{`description = "Salary"        # verifiable: checked against bookings
+purpose = "Monthly salary"  # optional: finer than description
 amount = 2500.00
 recurrence_months = 1
 
-[[recurring_transactions]]   # plan-only: never checked, never alerted
-amount = -300.00              # e.g. your household share
+# plan-only: never checked, never alerted
+description = ""            # leave empty
+amount = -300.00            # e.g. your household share
 category = "Household"`}</pre>
       </section>
 
       <section className="card" aria-labelledby="help-step2">
         <div className="card-title-text" id="help-step2">Step 2: Import CSV</div>
-        <p>Import your bank CSV under <strong>Transactions → Import CSV</strong>. Imported transactions are needed only to reconstruct the balance (Ist) and to run the check (Prüfung). They do not change the planned total.</p>
+        <p>Import your bank CSV under <strong>Transactions → Import CSV</strong>. Imported transactions are needed only to reconstruct the balance (Ist) and to run the check (Prüfung). They do not change the planned total. In the bank format settings (<strong>Transactions → Bank Formats</strong>) you can map a <code>purpose_column</code> (Verwendungszweck) so transactions from the same person with different purposes are stored and matched separately.</p>
       </section>
 
       <section className="card" aria-labelledby="help-step3">

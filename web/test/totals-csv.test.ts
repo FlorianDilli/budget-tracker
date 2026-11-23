@@ -137,6 +137,43 @@ describe('CSV import', () => {
     expect(second.duplicates).toBe(2);
   });
 
+  it('imports the purpose (Verwendungszweck) column', () => {
+    const s2 = parseSettings('[[importer.formats]]\nname="H"\ndate_column="Date"\ndescription_column="Name"\npurpose_column="Verwendungszweck"\namount_column="Amount"\n');
+    if (!s2.ok) throw new Error('bad fixture');
+    const csv = 'Date,Name,Verwendungszweck,Amount\n2025-02-01,Max Mustermann,Rent January,-850\n2025-02-01,Max Mustermann,Rent February,-850\n';
+    const r = prepareImport(csv, 'h.csv', s2.value.formats);
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.rows[0].purpose).toBe('Rent January');
+      expect(r.rows[1].purpose).toBe('Rent February');
+    }
+  });
+
+  it('keeps same-payee transactions with different purposes apart in duplicate detection', async () => {
+    const s2 = parseSettings('[[importer.formats]]\nname="H"\ndate_column="Date"\ndescription_column="Name"\npurpose_column="Verwendungszweck"\namount_column="Amount"\n');
+    if (!s2.ok) throw new Error('bad fixture');
+    const csv = 'Date,Name,Verwendungszweck,Amount\n2025-02-01,Max,Rent Jan,-850\n2025-02-01,Max,Rent Feb,-850\n2025-02-01,Max,Rent Jan,-850\n';
+    const r = prepareImport(csv, 'h.csv', s2.value.formats);
+    if (!r.ok) throw new Error('bad fixture');
+    const first = await classifyRows(r.rows, 'H', new Set());
+    // Same date+name+amount, but two distinct purposes all count as
+    // different transactions (identical lines in one file are kept).
+    expect(first.fresh).toHaveLength(3);
+    expect(first.duplicates).toBe(0);
+    expect(first.fresh[0].hash).not.toBe(first.fresh[1].hash);
+    expect(first.fresh[0].purpose).toBe('Rent Jan');
+    expect(first.fresh[1].purpose).toBe('Rent Feb');
+    // Re-importing the same file adds nothing.
+    const second = await classifyRows(r.rows, 'H', new Set(first.fresh.map((t) => t.hash)));
+    expect(second.fresh).toHaveLength(0);
+    expect(second.duplicates).toBe(3);
+  });
+
+  it('keeps the legacy duplicate hash for rows without a purpose', async () => {
+    expect(await transactionHash('2025-01-02', 'Test Payment', 1250, 0, ''))
+      .toBe('0ede5c2d6d63c96ddf85adbb9825d25f54921dbbb2cc60527337f58d9fa4894a');
+  });
+
   it('matches the CLI duplicate hash (crypto.py generate_transaction_hash)', async () => {
     expect(await transactionHash('2025-01-02', 'Test Payment', 1250, 0))
       .toBe('0ede5c2d6d63c96ddf85adbb9825d25f54921dbbb2cc60527337f58d9fa4894a');

@@ -43,7 +43,17 @@ export function analyzeMonth(financials: Financials, txs: Tx[], ym: YearMonth): 
   const month = Number(ym.slice(5, 7));
   const monthTxs = txs.filter((t) => t.date >= first && t.date <= last).sort(byDateThenDesc);
 
-  const contains = (tx: Tx, e: RecurringEntry) => tx.description.toLowerCase().includes(e.description.toLowerCase());
+  // Combined haystack: a purpose (Verwendungszweck) may live in its own
+  // column or inside the description text, so check both for both fields.
+  // An entry with a purpose only matches bookings whose combined text also
+  // contains that purpose — this separates same-payee transactions.
+  const haystack = (tx: Tx) => `${tx.description} ${tx.purpose ?? ''}`.toLowerCase();
+  const contains = (tx: Tx, e: RecurringEntry) => {
+    const hay = haystack(tx);
+    if (!hay.includes(e.description.toLowerCase())) return false;
+    if (e.purpose && !hay.includes(e.purpose.toLowerCase())) return false;
+    return true;
+  };
   const activeConfigs = (tx: Tx) => configs.filter((e) => activeByIndex.get(e.index) && contains(tx, e));
 
   // Smart fallback: entries that have a perfect (amount-equal) match somewhere this month.
@@ -116,7 +126,7 @@ export function analyzeMonth(financials: Financials, txs: Tx[], ym: YearMonth): 
   for (const e of configs) {
     const due = e.recurrence === 1 || (e.paymentMonths.length > 0 && e.paymentMonths.includes(month));
     if (due && activeByIndex.get(e.index) && !matched.has(e.index)) {
-      alerts.push(`Expected recurring payment for "${e.description}" not found`);
+      alerts.push(`Expected recurring payment for "${e.purpose ? `${e.description} / ${e.purpose}` : e.description}" not found`);
     }
   }
 

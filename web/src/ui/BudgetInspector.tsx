@@ -81,8 +81,9 @@ export function BudgetInspector({ financials, onSourceLineClick }: BudgetInspect
     const entry = line.entry;
     const color = line.monthlyCents < 0 ? categoryColors.get(categoryOf(line)) || palette[0] : incomeColor;
     const note = entry.recurrence === 1 ? 'Monthly' : line.isDue ? `Due (${money(line.priceCents || 0)})` : entry.paymentMonths.length ? `Paid in ${entry.paymentMonths.map((m) => months[m - 1]).join(', ')} (${money(line.priceCents || 0)})` : `Every ${entry.recurrence} months`;
+    const purposeNote = entry.purpose ? ` · ${entry.purpose}` : '';
     return <button type="button" className="bi-row" key={entry.index} onClick={() => onSourceLineClick?.(entry.line)} disabled={!onSourceLineClick || entry.line < 1} title={entry.description}>
-      <span className="bi-row-left"><span className="bi-row-title">{nameOf(line)}</span><span className="bi-meta"><span className="bi-badge" style={{ color, borderColor: `color-mix(in srgb, ${color} 48%, transparent)`, backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}>{categoryOf(line)}</span><span className={line.isDue && entry.recurrence > 1 ? 'bi-due' : ''}>{note}</span></span></span>
+      <span className="bi-row-left"><span className="bi-row-title">{nameOf(line)}</span><span className="bi-meta"><span className="bi-badge" style={{ color, borderColor: `color-mix(in srgb, ${color} 48%, transparent)`, backgroundColor: `color-mix(in srgb, ${color} 16%, transparent)` }}>{categoryOf(line)}</span><span className={line.isDue && entry.recurrence > 1 ? 'bi-due' : ''}>{note}{purposeNote}</span></span></span>
       <span className={`bi-amount ${line.monthlyCents < 0 ? 'bi-negative' : 'bi-positive'}`}>{signed(line.monthlyCents)}<small>/mo</small>{onSourceLineClick && <span className="bi-line">L{entry.line}</span>}</span>
     </button>;
   };

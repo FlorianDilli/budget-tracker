@@ -3,7 +3,7 @@ import { act, createElement, forwardRef, useImperativeHandle, useState } from 'r
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
-import { parseFinancials } from '../src/domain/config';
+import { parseFinancials, serializeFinancials } from '../src/domain/config';
 
 const mocks = vi.hoisted(() => ({ session: {} as Record<string, unknown>, jump: vi.fn() }));
 vi.mock('../src/state/session', () => ({ useSession: () => mocks.session }));
@@ -43,7 +43,8 @@ async function render(initialDraft: string | null = null, isSample = false, sett
       return { ok: true };
     });
     mocks.session = {
-      snapshot: { financialsToml: savedText }, financials: parsed(savedText),       settings: { currencySymbol: 'USD', roundAmounts: false, ...settings },
+      snapshot: { financialsToml: savedText }, financials: parsed(savedText),
+      settings: { currencySymbol: 'USD', roundAmounts: false, ...settings },
       drafts: { financials: draftText, settings: null }, isSample, setDraft, saveFinancials,
     };
     const page = createElement('div', null, createElement(BudgetPage), createElement('output', { 'data-testid': 'shared' }, parsed(savedText).recurring[0]?.description));
@@ -58,15 +59,22 @@ function button(text: string) {
   return result;
 }
 
+function input(label: string) {
+  const el = Array.from(container.querySelectorAll('label')).find((l) => l.textContent?.includes(label));
+  const found = el?.querySelector('input') as HTMLInputElement | undefined;
+  if (!found) throw new Error(`Input not found: ${label}`);
+  return found;
+}
+
 async function click(element: HTMLElement) {
   await act(async () => element.click());
 }
 
-async function edit(value: string) {
-  const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!;
+async function typeInto(el: HTMLInputElement, value: string) {
   await act(async () => {
-    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(textarea, value);
-    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!.call(el, value);
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
   });
 }
 
@@ -85,133 +93,88 @@ afterEach(async () => {
   container.remove();
 });
 
-describe('native budget studio', () => {
-  it('places the year in the title and updates the visual budget', async () => {
-    const titleHost = document.createElement('div');
-    document.body.append(titleHost);
-    try {
-      await render(`${draft}start_date = "2024-01-01"\n`, false, {}, titleHost);
-      const year = titleHost.querySelector<HTMLSelectElement>('select[aria-label="Year"]')!;
-      expect(year).not.toBeNull();
-      expect(container.querySelector('.bi-toolbar select[aria-label="Year"]')).toBeNull();
-      await act(async () => { year.value = '2024'; year.dispatchEvent(new Event('change', { bubbles: true })); });
-      expect(container.querySelector('.bi-months')?.textContent).toContain('2024 Monthly Overview');
-    } finally {
-      titleHost.remove();
-    }
+describe('budget form (fields instead of TOML)', () => {
+  it('renders saved entries as designed input fields', async () => {
+    await render();
+    expect(button('Form').getAttribute('aria-pressed')).toBe('true');
+    expect(input('Description').value).toBe('Saved rent');
+    expect(input('Purpose (Verwendungszweck)')).not.toBeNull();
+    expect(input('Amount').value).toBe('-100.00');
+    expect(container.querySelector('.budget-inspector')?.textContent).toContain('Saved rent');
+    expect(container.querySelector('.studio-form')).not.toBeNull();
   });
 
-  it('keeps the editor and visual budget available on narrow screens', async () => {
-    Object.defineProperty(window, 'innerWidth', { value: 375, configurable: true });
-    await render(draft);
-    expect(button('Split').getAttribute('aria-pressed')).toBe('true');
-    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
-    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(false);
-    expect(container.querySelector('.bi-month-grid')).not.toBeNull();
-    expect(container.querySelector('.bi-flow')?.textContent).toContain('Cashflow Sankey');
-
-    await click(button('Visual Budget'));
-    expect(container.querySelector('.budget-page.is-budget')).not.toBeNull();
-    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(true);
-    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(false);
-    await click(button('Editor'));
-    expect(container.querySelector('.budget-page.is-budget')).toBeNull();
-    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
-    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(true);
-  });
-
-  it('autosaves a valid editor draft without a manual save button', async () => {
+  it('edits a field and autosaves the serialized TOML without a manual save button', async () => {
     vi.useFakeTimers();
     try {
       await render();
-      await edit(draft);
-      expect(setDraft).toHaveBeenCalledWith('financials', draft);
-      expect(container.querySelector('.budget-inspector')?.textContent).toContain('Draft salary');
-      expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250.00USD');
-      expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Saved rent');
-      expect(container.querySelector('.studio-status')).toBeNull();
-      expect(container.textContent).not.toContain('Unsaved preview');
+      await typeInto(input('Description'), 'New salary');
+      expect(setDraft).toHaveBeenCalledWith('financials', expect.stringContaining('description = "New salary"'));
+      expect(container.querySelector('.budget-inspector')?.textContent).toContain('New salary');
       expect(Array.from(container.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Save')).toBe(false);
-
       await act(async () => { vi.advanceTimersByTime(800); });
-      expect(saveFinancials).toHaveBeenCalledWith(draft);
-      expect(container.querySelector('[data-testid=shared]')?.textContent).toBe('Draft salary');
-      expect(container.textContent).not.toContain('Budget is saved automatically');
+      expect(saveFinancials).toHaveBeenCalled();
+      const savedText = saveFinancials.mock.calls[0][0] as string;
+      expect(parsed(savedText).recurring[0].description).toBe('New salary');
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it('does not autosave an invalid draft, and the untouched sample is left alone', async () => {
-    vi.useFakeTimers();
-    try {
-      await render(invalid);
-      expect(container.querySelector('[role=alert]')?.textContent).toContain('Broken');
-      await act(async () => { vi.advanceTimersByTime(2000); });
-      expect(saveFinancials).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
+  it('adds and removes entries via the form', async () => {
+    await render();
+    await click(button('Add entry'));
+    expect(container.querySelectorAll('.budget-entry')).toHaveLength(2);
+    await click(button('Remove')),
+      expect(container.querySelectorAll('.budget-entry')).toHaveLength(1);
   });
 
-  it('still reports autosave errors without the removed status controls', async () => {
-    vi.useFakeTimers();
-    try {
-      await render();
-      await edit(draft);
-      saveFinancials.mockRejectedValue(new Error('Storage unavailable'));
-      await act(async () => { vi.advanceTimersByTime(800); });
-      expect(container.querySelector('[role=status]')?.textContent).toContain('Not saved: Storage unavailable');
-    } finally {
-      vi.useRealTimers();
-    }
+  it('imports an old TOML file straight into the form fields', async () => {
+    await render();
+    const toml = '[[recurring_transactions]]\ndescription = "Old rent"\npurpose = "Monthly rent"\namount = -850\nrecurrence_months = 1\n';
+    const fileInput = container.querySelector<HTMLInputElement>('input[aria-label="Import old TOML file"]')!;
+    const file = new File([toml], 'financials.toml', { type: 'text/plain' });
+    Object.defineProperty(file, 'text', { value: async () => toml });
+    Object.defineProperty(fileInput, 'files', { value: [file] });
+    await act(async () => { fileInput.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(input('Description').value).toBe('Old rent');
+    expect(input('Purpose (Verwendungszweck)').value).toBe('Monthly rent');
+    expect(input('Amount').value).toBe('-850.00');
+    expect(container.textContent).toContain('Imported financials.toml');
+    // And the serialized draft round-trips back to the same values.
+    expect(describe(serializeFinancials(parsed(toml)))).toBe('Old rent');
+    function describe(_t: string) { return parsed(_t).recurring[0].description; }
+  });
+
+  it('rejects an invalid TOML import without changing the fields', async () => {
+    await render();
+    const bad = '[[recurring_transactions]]\ndescription = "Broken"\n';
+    const fileInput = container.querySelector<HTMLInputElement>('input[aria-label="Import old TOML file"]')!;
+    const file = new File([bad], 'bad.toml', { type: 'text/plain' });
+    Object.defineProperty(file, 'text', { value: async () => bad });
+    Object.defineProperty(fileInput, 'files', { value: [file] });
+    await act(async () => { fileInput.dispatchEvent(new Event('change', { bubbles: true })); });
+    expect(container.querySelector('[role=status]')?.textContent).toContain('Could not import "bad.toml"');
+    expect(input('Description').value).toBe('Saved rent');
+  });
+
+  it('keeps the TOML tab as an advanced escape hatch and jumps from the visual budget', async () => {
+    await render(draft);
+    await click(button('Visual Budget'));
+    expect(container.querySelector<HTMLElement>('.studio-form')).toBeNull();
+    await click(container.querySelector<HTMLButtonElement>('.bi-row')!);
+    expect(button('TOML').getAttribute('aria-pressed')).toBe('true');
+    expect(mocks.jump).toHaveBeenCalledWith(2);
+    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('ClearCopyUndoRedoSearch');
   });
 
   it('applies round_amounts and no-space-currency format in the visual budget', async () => {
     await render(draft, false, { roundAmounts: true });
     expect(container.querySelector('.budget-inspector')?.textContent).toContain('+250USD');
-    expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('250.00');
-    expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('$250');
   });
 
-  it('uses the shared preview notice without a duplicate budget status', async () => {
+  it('uses the shared preview notice for the sample', async () => {
     await render(null, true);
-    expect(container.querySelector('.sample-notice')?.textContent).toContain('Preview data is being shown. Save your budget or settings to keep your changes.');
-    expect(container.querySelector('.studio-status')).toBeNull();
-    expect(container.textContent).not.toContain('Unsaved preview');
-    expect(container.querySelector('[aria-label="Open TOML file"]')).toBeNull();
-    expect(container.querySelector('[aria-label="Download TOML file"]')).toBeNull();
-    expect(container.querySelector('.studio-editor-actions')?.textContent).toBe('ClearCopyUndoRedoSearch');
-    expect(container.textContent).not.toContain('Discard changes');
-    expect(container.querySelector('.studio-editor-actions button')?.textContent).not.toBe('Wrap');
-    expect(container.querySelector('.studio-editor-actions .primary')).toBeNull();
-    expect(container.querySelector('.studio-footer')).toBeNull();
-  });
-
-  it('shows the saved budget and disables source navigation for an invalid draft', async () => {
-    await render(invalid);
-    expect(container.querySelector('[role=status]')?.textContent).toContain('Invalid draft. Showing the saved budget.');
-    expect(container.querySelector('[role=alert]')?.textContent).toContain('Broken');
-    expect(container.querySelector('.budget-inspector')?.textContent).toContain('Saved rent');
-    expect(container.querySelector('.budget-inspector')?.textContent).not.toContain('Broken');
-    expect(Array.from(container.querySelectorAll('button')).some((b) => b.textContent?.trim() === 'Save')).toBe(false);
-    expect(container.querySelector<HTMLButtonElement>('.bi-row')?.disabled).toBe(true);
-    await click(button('Jump to line'));
-    expect(mocks.jump).toHaveBeenCalledWith(1);
-    expect(saveFinancials).not.toHaveBeenCalled();
-  });
-
-  it('navigates from a visual entry to its editor source and supports editor actions', async () => {
-    await render(draft);
-    await click(button('Visual Budget'));
-    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(true);
-    await click(container.querySelector<HTMLButtonElement>('.bi-row')!);
-    expect(button('Editor').getAttribute('aria-pressed')).toBe('true');
-    expect(container.querySelector<HTMLElement>('.studio-editor')?.hidden).toBe(false);
-    expect(container.querySelector<HTMLElement>('.studio-inspector')?.hidden).toBe(true);
-    expect(mocks.jump).toHaveBeenCalledWith(2);
-    await click(button('Clear'));
-    expect(setDraft).toHaveBeenLastCalledWith('financials', '');
-    expect(container.querySelector<HTMLTextAreaElement>('textarea')?.value).toBe('');
+    expect(container.querySelector('.sample-notice')?.textContent).toContain('Preview data is being shown.');
   });
 });

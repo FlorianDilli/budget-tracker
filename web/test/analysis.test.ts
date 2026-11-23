@@ -96,6 +96,30 @@ describe('analyzeMonth verification (no spending math)', () => {
     expect(missing.alerts).toContain('Expected recurring payment for "Lump-sum payment partner" not found');
   });
 
+  it('separates same-payee transactions by purpose (Verwendungszweck)', () => {
+    const r = parseFinancials(`
+[[recurring_transactions]]
+description = "Max Mustermann"
+purpose = "Rent January"
+amount = -850
+[[recurring_transactions]]
+description = "Max Mustermann"
+purpose = "Rent February"
+amount = -850
+`);
+    if (!r.ok) throw new Error('bad fixture');
+    const t = (hash: string, purpose: string): Tx => ({ hash, date: '2025-02-03', description: 'Max Mustermann', purpose, cents: -85000, account: 'A' });
+    const a = analyzeMonth(r.value, [t('h1', 'Rent January'), t('h2', 'Rent February')], '2025-02');
+    expect(a.txs[0].matchedEntry).toBe(0);
+    expect(a.txs[1].matchedEntry).toBe(1);
+    expect(a.txs.every((x) => x.flags.includes('VERIFIED'))).toBe(true);
+    expect(a.alerts).toEqual([]);
+    // A booking with an unknown purpose matches neither entry.
+    const other = analyzeMonth(r.value, [t('h3', 'Something else')], '2025-02');
+    expect(other.txs[0].matchedEntry).toBeNull();
+    expect(other.alerts).toHaveLength(2);
+  });
+
   it('uses transaction-date pricing while the plan uses month-end pricing', () => {
     const r = parseFinancials('[[recurring_transactions]]\ndescription="Service"\namount=-10\nstart_date="2025-01-01"\namount_history=[{from=2025-03-20, amount=-15}]');
     if (!r.ok) throw new Error('bad fixture');

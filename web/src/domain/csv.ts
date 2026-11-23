@@ -158,6 +158,8 @@ export interface NormalizedRow {
   rowNumber: number;
   date: IsoDate;
   description: string;
+  /** Purpose (Verwendungszweck) from the format's purpose_column, '' if none. */
+  purpose: string;
   cents: Cents;
 }
 
@@ -205,13 +207,14 @@ export function prepareImport(text: string, filename: string, formats: ImportFor
     const desc = (chosen!.descriptionColumn ? rec[chosen!.descriptionColumn] ?? '' : '').trim();
     const ref = (chosen!.referenceColumn ? rec[chosen!.referenceColumn] ?? '' : '').trim();
     const description = desc || ref;
+    const purpose = (chosen!.purposeColumn ? rec[chosen!.purposeColumn] ?? '' : '').trim();
     if (!rawDate) return rowErrors.push(`Row ${rowNumber}: date is empty`);
     if (!rawAmount) return rowErrors.push(`Row ${rowNumber}: amount is empty`);
     if (!description) return rowErrors.push(`Row ${rowNumber}: no description or reference`);
     const date = normalizeDate(rawDate, chosen!.dateFormat);
     if (!date) return rowErrors.push(`Row ${rowNumber}: date "${rawDate}" is not in a recognized format`);
     try {
-      rows.push({ rowNumber, date, description, cents: normalizeAmount(rawAmount, chosen!) });
+      rows.push({ rowNumber, date, description, purpose, cents: normalizeAmount(rawAmount, chosen!) });
     } catch {
       rowErrors.push(`Row ${rowNumber}: amount "${rawAmount}" is not a valid amount`);
     }

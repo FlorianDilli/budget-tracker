@@ -76,6 +76,26 @@
   .budget-studio { height: max(520px, calc(100dvh - 12rem)); }
 }
 
+/* Budget form fields (replaces the TOML editor as the default). */
+.studio-form { flex: 0 1 52%; min-width: 0; overflow-y: auto; padding: 1rem; }
+.studio-form .budget-form { display: flex; flex-direction: column; gap: 1rem; }
+.budget-entry { margin-top: .85rem; padding: .9rem; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); display: flex; flex-direction: column; gap: .75rem; }
+.budget-entry-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+.budget-entry-head button { padding: .25rem .6rem; font-size: .75rem; font-weight: 700; }
+.payment-months { border: 0; margin: 0; padding: 0; }
+.payment-months legend { margin-bottom: .4rem; }
+.month-chips { display: flex; flex-wrap: wrap; gap: .35rem; }
+.month-chip { padding: .3rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 700; color: var(--muted); }
+.month-chip.active { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+.amount-history { display: flex; flex-direction: column; gap: .5rem; }
+.history-row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.history-row input[type='date'] { flex: 0 1 10rem; }
+.history-row input[type='text'] { flex: 1 1 8rem; min-width: 0; }
+.history-row button { flex: 0 0 auto; padding: .35rem .6rem; font-size: .75rem; font-weight: 700; }
+.amount-history > button, .budget-form .format-add button { align-self: flex-start; }
+.import-toml { position: relative; display: inline-flex; align-items: center; gap: .4rem; padding: .35rem .7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: .78rem; font-weight: 700; cursor: pointer; }
+.import-toml input[type='file'] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
 /* Keep Visual Budget aligned with the app's normal page gutters. */
 .budget-studio.is-budget { width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box; overflow-x: hidden; }
 .budget-studio.is-budget .studio-status { padding-left: 0; padding-right: 0; }

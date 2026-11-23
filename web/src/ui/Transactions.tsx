@@ -55,7 +55,7 @@ export function Transactions() {
   const q = query.trim().toLowerCase();
   const filtered = a.txs.filter((t) => {
     if (txFilter === 'verified' && !t.flags.includes('VERIFIED')) return false;
-    if (q && !t.tx.description.toLowerCase().includes(q)) return false;
+    if (q && !`${t.tx.description} ${t.tx.purpose ?? ''}`.toLowerCase().includes(q)) return false;
     return true;
   });
   const inCents = filtered.filter((t) => t.tx.cents > 0).reduce((s, t) => s + t.tx.cents, 0);
@@ -105,12 +105,13 @@ export function Transactions() {
         </div> : filtered.length === 0 ? <p className="muted">No transactions match this search.</p> : (
           <div className="table-wrap">
             <table className="tx-table">
-              <thead><tr><th>Date</th><th>Description</th><th>Flags</th><th className="num">Amount</th></tr></thead>
+              <thead><tr><th>Date</th><th>Description</th><th>Purpose</th><th>Flags</th><th className="num">Amount</th></tr></thead>
               <tbody>
                 {filtered.map((t) => (
                   <tr key={t.tx.hash} className={selected === t.tx.hash ? 'selected' : ''} onClick={() => setSelected(t.tx.hash)}>
                     <td className="tx-date num" style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>{t.tx.date}</td>
                     <td className="tx-desc"><strong>{t.tx.description}</strong></td>
+                    <td className="tx-desc">{t.tx.purpose || <span className="muted">—</span>}</td>
                     <td className="tx-status">{t.flags.map((f) => <span key={f} className={`flag ${f.toLowerCase()}`}>{FLAG_LABEL[f]}</span>)}</td>
                     <td className="tx-amt num" style={{ fontWeight: 700 }}><Money cents={t.tx.cents} currency={cur} /></td>
                     <td className="tx-mobile-meta">
@@ -129,6 +130,7 @@ export function Transactions() {
           <dl className="detail">
             <dt>Date</dt><dd>{selectedTx.tx.date}</dd>
             <dt>Description</dt><dd>{selectedTx.tx.description}</dd>
+            <dt>Purpose (Verwendungszweck)</dt><dd>{selectedTx.tx.purpose || '—'}</dd>
             <dt>Account</dt><dd>{selectedTx.tx.account}</dd>
             <dt>Recurring match</dt><dd>{selectedTx.matchedEntry !== null ? financials.recurring[selectedTx.matchedEntry]?.label : 'none'}</dd>
             <dt>Duplicate key</dt><dd className="mono small">{selectedTx.tx.hash.slice(0, 16)}…</dd>
@@ -258,7 +260,7 @@ function ImportPanel({
       {source && mapping && error && <fieldset className="mapping-controls" disabled={busy}>
         <p className="muted small">Column mapping for {source.filename}. Changes apply to this import only.</p>
         <label>Format <select value={mapping.name} onChange={(e) => { const format = formats.find((f) => f.name === e.target.value); if (format) chooseFormat(format, source.text); }}>{formats.map((f, i) => <option key={`${f.name}-${i}`} value={f.name}>{f.name}</option>)}</select></label>
-        {(['dateColumn', 'amountColumn', 'descriptionColumn', 'referenceColumn'] as const).map((field) => <label key={field}>{field === 'dateColumn' ? 'Date' : field === 'amountColumn' ? 'Amount' : field === 'descriptionColumn' ? 'Description' : 'Reference'} <select value={mapping[field] ?? ''} onChange={(e) => { setMapping({ ...mapping, [field]: e.target.value || undefined }); }}><option value="">Select column</option>{headers.map((h, i) => <option key={`${h}-${i}`} value={h}>{h}</option>)}</select></label>)}
+        {(['dateColumn', 'amountColumn', 'descriptionColumn', 'referenceColumn', 'purposeColumn'] as const).map((field) => <label key={field}>{field === 'dateColumn' ? 'Date' : field === 'amountColumn' ? 'Amount' : field === 'descriptionColumn' ? 'Description' : field === 'referenceColumn' ? 'Reference' : 'Purpose (Verwendungszweck)'} <select value={mapping[field] ?? ''} onChange={(e) => { setMapping({ ...mapping, [field]: e.target.value || undefined }); }}><option value="">Select column</option>{headers.map((h, i) => <option key={`${h}-${i}`} value={h}>{h}</option>)}</select></label>)}
         <button type="button" disabled={busy} onClick={() => void runImport(source.text, source.filename, mapping)}>Import with this mapping</button>
       </fieldset>}
       {error && <p className="error" role="alert">{error}</p>}

@@ -13,9 +13,17 @@ export async function sha256Hex(text: string): Promise<string> {
   return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-/** SHA-256 of "date-description-amount-occurrence" (crypto.py:127-132). */
-export function transactionHash(date: string, description: string, cents: Cents, occurrence: number): Promise<string> {
-  return sha256Hex(`${date}-${description}-${pyFloatRepr(cents)}-${occurrence}`);
+/**
+ * SHA-256 of "date-description-amount-occurrence" (crypto.py:127-132).
+ * With a non-empty purpose the hash becomes
+ * "date-description-purpose-amount-occurrence", so the same payee with
+ * different purposes (Verwendungszweck) counts as different transactions.
+ * Empty-purpose rows keep the legacy string exactly, so re-importing an
+ * old file still de-duplicates against older imports.
+ */
+export function transactionHash(date: string, description: string, cents: Cents, occurrence: number, purpose = ''): Promise<string> {
+  const amount = pyFloatRepr(cents);
+  return sha256Hex(purpose ? `${date}-${description}-${purpose}-${amount}-${occurrence}` : `${date}-${description}-${amount}-${occurrence}`);
 }
 
 export interface Classified {
@@ -33,16 +41,17 @@ export async function classifyRows(rows: NormalizedRow[], accountName: string, e
   const fresh: Tx[] = [];
   let duplicates = 0;
   for (const row of rows) {
-    const key = `${row.date}\u0000${row.description}\u0000${row.cents}`;
+    const key = `${row.date}\u0000${row.description}\u0000${row.purpose ?? ""}\u0000${row.cents}`;
     const occurrence = counts.get(key) ?? 0;
     counts.set(key, occurrence + 1);
-    const hash = await transactionHash(row.date, row.description, row.cents, occurrence);
+    const purpose = row.purpose ?? '';
+    const hash = await transactionHash(row.date, row.description, row.cents, occurrence, purpose);
     if (existing.has(hash)) {
       duplicates++;
       continue;
     }
     existing.add(hash);
-    fresh.push({ hash, date: row.date, description: row.description, cents: row.cents, account: accountName });
+    fresh.push({ hash, date: row.date, description: row.description, purpose, cents: row.cents, account: accountName });
   }
   return { fresh, duplicates };
 }

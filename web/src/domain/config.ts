@@ -17,6 +17,9 @@ export interface ImportFormat {
   amountColumn: string;
   descriptionColumn?: string;
   referenceColumn?: string;
+  /** Optional CSV column holding the purpose (Verwendungszweck). Lets the
+   *  same payee with different purposes be told apart. */
+  purposeColumn?: string;
   delimiter: string;
   dateFormat?: string;
   decimalSeparator: string;
@@ -91,6 +94,7 @@ export function parseSettings(text: string): Parsed<Settings> {
     const amountColumn = str(raw.amount_column);
     const descriptionColumn = str(raw.description_column);
     const referenceColumn = str(raw.reference_column);
+    const purposeColumn = str(raw.purpose_column) ?? str(raw.verwendungszweck_column);
     if (!name) fail('name is required');
     if (!dateColumn) fail('date_column is required');
     if (!amountColumn) fail('amount_column is required');
@@ -102,6 +106,8 @@ export function parseSettings(text: string): Parsed<Settings> {
     const thousands = raw.thousands_separator === undefined ? '' : str(raw.thousands_separator);
     if (thousands === undefined) fail('thousands_separator must be a string');
     if (thousands && thousands === decimal) fail('thousands_separator must differ from decimal_separator');
+    if (raw.purpose_column !== undefined && typeof raw.purpose_column !== 'string') fail('purpose_column must be a string');
+    if (raw.verwendungszweck_column !== undefined && typeof raw.verwendungszweck_column !== 'string') fail('verwendungszweck_column must be a string');
     if (raw.date_format !== undefined && typeof raw.date_format !== 'string') fail('date_format must be a string');
     const hasBal = raw.balance_snapshot !== undefined;
     const hasBalDate = raw.balance_snapshot_date !== undefined;
@@ -125,6 +131,7 @@ export function parseSettings(text: string): Parsed<Settings> {
       amountColumn: amountColumn ?? '',
       descriptionColumn,
       referenceColumn,
+      purposeColumn,
       delimiter: delimiter ?? ',',
       dateFormat: str(raw.date_format),
       decimalSeparator: decimal ?? '.',
@@ -150,6 +157,7 @@ export function serializeSettings(s: Settings): string {
     lines.push('', '[[importer.formats]]', `name = ${q(f.name)}`, `date_column = ${q(f.dateColumn)}`, `amount_column = ${q(f.amountColumn)}`);
     if (f.descriptionColumn) lines.push(`description_column = ${q(f.descriptionColumn)}`);
     if (f.referenceColumn) lines.push(`reference_column = ${q(f.referenceColumn)}`);
+    if (f.purposeColumn) lines.push(`purpose_column = ${q(f.purposeColumn)}`);
     lines.push(`delimiter = ${q(f.delimiter)}`, `decimal_separator = ${q(f.decimalSeparator)}`);
     if (f.thousandsSeparator) lines.push(`thousands_separator = ${q(f.thousandsSeparator)}`);
     if (f.dateFormat) lines.push(`date_format = ${q(f.dateFormat)}`);
@@ -167,6 +175,9 @@ export interface RecurringEntry {
   line: number;
   label: string;
   description: string;
+  /** Optional purpose (Verwendungszweck): finer than description, so the
+   *  same payee with different purposes can be told apart when matching. */
+  purpose?: string;
   baseCents: Cents | null;
   history: { from: IsoDate; cents: Cents }[];
   recurrence: number;
@@ -213,6 +224,8 @@ export function parseFinancials(text: string): Parsed<Financials> {
     const fail = (message: string) => issues.push({ line, message: `${label}: ${message}` });
 
     if (raw.description !== undefined && typeof raw.description !== 'string') fail('description must be a string');
+    if (raw.purpose !== undefined && typeof raw.purpose !== 'string') fail('purpose must be a string');
+    if (raw.verwendungszweck !== undefined && typeof raw.verwendungszweck !== 'string') fail('verwendungszweck must be a string');
     if (raw.intuitive_name !== undefined && typeof raw.intuitive_name !== 'string') fail('intuitive_name must be a string');
     if (raw.category !== undefined && typeof raw.category !== 'string') fail('category must be a string');
 
@@ -282,6 +295,7 @@ export function parseFinancials(text: string): Parsed<Financials> {
       line,
       label,
       description,
+      purpose: str(raw.purpose) ?? str(raw.verwendungszweck),
       baseCents,
       history,
       recurrence,
@@ -312,6 +326,39 @@ export function parseFinancials(text: string): Parsed<Financials> {
   out.cash.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 
   return issues.length ? { ok: false, issues } : { ok: true, value: out };
+}
+
+/** Writes financials as TOML that `parseFinancials` reads back to the same
+ *  value. This is the storage format behind the budget form fields. */
+export function serializeFinancials(f: Financials): string {
+  const q = (v: string) => JSON.stringify(v);
+  const lines: string[] = [];
+  f.recurring.forEach((e, i) => {
+    if (i > 0) lines.push('');
+    lines.push('[[recurring_transactions]]');
+    if (e.description) lines.push(`description = ${q(e.description)}`);
+    if (e.purpose) lines.push(`purpose = ${q(e.purpose)}`);
+    if (e.intuitiveName) lines.push(`intuitive_name = ${q(e.intuitiveName)}`);
+    if (e.category) lines.push(`category = ${q(e.category)}`);
+    if (e.baseCents !== null && e.baseCents !== undefined) lines.push(`amount = ${centsToDecimal(e.baseCents)}`);
+    if (e.history.length) {
+      const items = e.history.map((h) => `{ from = ${q(h.from)}, amount = ${centsToDecimal(h.cents)} }`).join(', ');
+      lines.push(`amount_history = [${items}]`);
+    }
+    if (e.recurrence && e.recurrence !== 1) lines.push(`recurrence_months = ${e.recurrence}`);
+    if (e.paymentMonths.length) {
+      lines.push(`payment_month = ${e.paymentMonths.length === 1 ? String(e.paymentMonths[0]) : `[${e.paymentMonths.join(', ')}]`}`);
+    }
+    if (e.start) lines.push(`start_date = ${q(e.start)}`);
+    if (e.end) lines.push(`end_date = ${q(e.end)}`);
+  });
+  if (f.cash.length) {
+    if (lines.length) lines.push('');
+    lines.push('[cash]');
+    const items = f.cash.map((c) => `{ date = ${q(c.date)}, amount = ${centsToDecimal(c.cents)} }`).join(', ');
+    lines.push(`entries = [${items}]`);
+  }
+  return lines.length ? `${lines.join('\n')}\n` : '';
 }
 
 /** Line of the first `[section]` header (1 if absent). */

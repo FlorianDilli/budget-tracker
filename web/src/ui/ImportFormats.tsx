@@ -194,6 +194,9 @@ export function ImportFormatsSection() {
                 <label><span className="setting-label">Reference column<InfoButton label="Reference column" text="Optional CSV header containing a bank reference or transaction identifier." /></span>
                   <input value={format.referenceColumn ?? ''} aria-invalid={Boolean(errors.descriptionOrReference)} aria-describedby={errors.descriptionOrReference ? descriptionOrReferenceErrorId : undefined} onChange={(e) => patchFormat(index, { referenceColumn: e.target.value || undefined })} />
                 </label>
+                <label><span className="setting-label">Purpose column (Verwendungszweck)<InfoButton label="Purpose column" text="Optional CSV header containing the purpose (Verwendungszweck). When the same person has several transactions, the purpose tells them apart for matching and duplicate detection." /></span>
+                  <input value={format.purposeColumn ?? ''} placeholder="Optional, e.g. Verwendungszweck" onChange={(e) => patchFormat(index, { purposeColumn: e.target.value || undefined })} />
+                </label>
                 <label><span className="setting-label">Date format<InfoButton label="Date format" text="Choose the date order used in this bank export. Automatic detection is recommended unless dates are ambiguous." /></span>
                   <select
                     value={isCustomDateFormat ? CUSTOM_DATE_FORMAT : format.dateFormat ?? ''}

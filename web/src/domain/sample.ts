@@ -23,6 +23,7 @@ balance_snapshot_date = "2025-01-01"
 export const SAMPLE_FINANCIALS = `# Sample financials (synthetic). Edit and press Save to keep.
 [[recurring_transactions]]
 description       = "Salary Demo Corp"
+purpose           = "Monthly salary"
 amount            = 2500.00
 recurrence_months = 1
 

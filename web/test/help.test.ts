@@ -11,7 +11,8 @@ describe('Help page', () => {
     const text = doc.body.textContent!;
     expect(text).toContain('Overview');
     expect(text).toContain('Step 1: Plan your budget');
-    expect(text).toContain('recurring_transactions');
+    expect(text).toContain('Import old TOML file');
+    expect(text).toContain('purpose');
     expect(text).toContain('Step 2: Import CSV');
     expect(text).toContain('Step 3: Check whether payments happened');
     expect(text).toContain('Lump-sum payment partner');

@@ -7,6 +7,8 @@ export interface Tx {
   hash: string;
   date: string;
   description: string;
+  /** Purpose (Verwendungszweck); ''/missing for imports without a purpose column. */
+  purpose?: string;
   cents: Cents;
   account: string;
 }
@@ -47,6 +49,7 @@ export function parseSnapshot(json: string): Snapshot {
   for (const t of s.transactions) {
     if (
       !t || typeof t.hash !== 'string' || typeof t.date !== 'string' || typeof t.description !== 'string' ||
+      (t.purpose !== undefined && typeof t.purpose !== 'string') ||
       typeof t.cents !== 'number' || !Number.isSafeInteger(t.cents) || typeof t.account !== 'string'
     ) {
       throw new SnapshotError('Invalid transaction record');

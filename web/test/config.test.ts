@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseSettings, parseFinancials } from '../src/domain/config';
+import { parseSettings, parseFinancials, serializeFinancials, serializeSettings } from '../src/domain/config';
 import { SAMPLE_FINANCIALS, SAMPLE_SETTINGS } from '../src/domain/sample';
 import { findTableLines, parseToml } from '../src/domain/toml';
 
@@ -98,6 +98,70 @@ description = "Bad"
     const r = parseFinancials(text);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.issues.find((issue) => issue.message.includes('needs amount'))?.line).toBe(4);
+  });
+});
+
+describe('purpose (Verwendungszweck)', () => {
+  it('parses purpose on a recurring entry and the purpose_column of an import format', () => {
+    const f = parseFinancials('[[recurring_transactions]]\ndescription = "Landlord"\npurpose = "June rent"\namount = -850\n');
+    expect(f.ok).toBe(true);
+    if (f.ok) expect(f.value.recurring[0].purpose).toBe('June rent');
+    const alias = parseFinancials('[[recurring_transactions]]\ndescription = "Landlord"\nverwendungszweck = "July rent"\namount = -850\n');
+    expect(alias.ok).toBe(true);
+    if (alias.ok) expect(alias.value.recurring[0].purpose).toBe('July rent');
+    const s = parseSettings('[[importer.formats]]\nname="N"\ndate_column="D"\namount_column="A"\ndescription_column="P"\npurpose_column="Verwendungszweck"\n');
+    expect(s.ok).toBe(true);
+    if (s.ok) expect(s.value.formats[0].purposeColumn).toBe('Verwendungszweck');
+  });
+  it('round-trips purpose_column through serializeSettings', () => {
+    const s = parseSettings('[[importer.formats]]\nname="N"\ndate_column="D"\namount_column="A"\ndescription_column="P"\npurpose_column="Verwendungszweck"\n');
+    if (!s.ok) throw new Error('bad');
+    expect(serializeSettings(s.value)).toContain('purpose_column = "Verwendungszweck"');
+    const again = parseSettings(serializeSettings(s.value));
+    expect(again.ok).toBe(true);
+    if (again.ok) expect(again.value.formats[0].purposeColumn).toBe('Verwendungszweck');
+  });
+  it('rejects a non-string purpose', () => {
+    expect(parseFinancials('[[recurring_transactions]]\ndescription="X"\npurpose=42\namount=1\n').ok).toBe(false);
+  });
+});
+
+describe('serializeFinancials (budget form storage)', () => {
+  it('round-trips entries, history, payment months, dates, purpose and cash', () => {
+    const src = `[[recurring_transactions]]
+description = "Salary"
+purpose = "Monthly salary"
+intuitive_name = "Paycheck"
+category = "Income"
+amount = 2500.00
+recurrence_months = 12
+payment_month = [1, 7]
+start_date = "2025-01-01"
+end_date = "2025-12-31"
+amount_history = [{ from = "2025-06-01", amount = 2600.00 }]
+[cash]
+entries = [{ date = "2025-01-01", amount = 100.00 }]
+`;
+    const first = parseFinancials(src);
+    if (!first.ok) throw new Error('bad fixture');
+    const text = serializeFinancials(first.value);
+    const second = parseFinancials(text);
+    expect(second.ok).toBe(true);
+    if (!second.ok) return;
+    const [e] = second.value.recurring;
+    expect(e.purpose).toBe('Monthly salary');
+    expect(e.intuitiveName).toBe('Paycheck');
+    expect(e.category).toBe('Income');
+    expect(e.baseCents).toBe(250000);
+    expect(e.history).toEqual([{ from: '2025-06-01', cents: 260000 }]);
+    expect(e.recurrence).toBe(12);
+    expect(e.paymentMonths).toEqual([1, 7]);
+    expect(e.start).toBe('2025-01-01');
+    expect(e.end).toBe('2025-12-31');
+    expect(second.value.cash).toEqual([{ date: '2025-01-01', cents: 10000 }]);
+  });
+  it('serializes empty financials to empty text', () => {
+    expect(serializeFinancials({ recurring: [], cash: [] })).toBe('');
   });
 });
 

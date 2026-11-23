@@ -8,7 +8,7 @@ Budget Tracker is a browser app for importing bank transactions, maintaining a m
 
 - Review available-to-spend totals, monthly budget, spending, alerts, and account totals.
 - Import CSV transactions with configurable column and number formats, preview, and duplicate detection.
-- Edit recurring budget entries in a TOML editor and inspect them in a visual monthly budget.
+- Edit recurring budget entries in designed form fields (with an importer for old `financials.toml` files) and inspect them in a visual monthly budget. Budget entries and CSV imports support an optional purpose (Verwendungszweck) to separate same-payee transactions.
 - Browse transaction matches and spending insights across months.
 - Export and restore password-protected `.budget` backups.
 - Install the app as a PWA and use its cached app shell offline after the first load.
